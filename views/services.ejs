@@ -34,7 +34,11 @@
             <div class="dash-card" onclick="location.href='/order/<%= s.id %>'" style="cursor:pointer">
               <div class="dash-card-top">
                 <strong><%= s.name %></strong>
-                <span class="badge badge-confirmed" style="font-size:0.7rem"><%= formatTZS(s.price) %></span>
+                <% if (s.needs_quote) { %>
+                  <span class="badge" style="background:rgba(168,85,247,0.12);color:#a855f7;font-size:0.7rem">Request Quote</span>
+                <% } else { %>
+                  <span class="badge badge-confirmed" style="font-size:0.7rem"><%= formatTZS(s.price) %></span>
+                <% } %>
               </div>
               <div class="dash-card-info"><%= s.description %></div>
               <% if (s.has_options) { %>
