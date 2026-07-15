@@ -1,3 +1,4 @@
+require('express-async-errors');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -57,7 +58,7 @@ function isAdmin(req, res, next) {
 }
 
 async function start() {
-  const { initDB, get, all, run } = await require('./database/db');
+  const { initDB, get, all, run } = await require('./database/db-pg');
   await initDB();
 
   app.get('/', (req, res) => {
@@ -70,9 +71,9 @@ async function start() {
     res.render('login', { error: null, goodbye: req.query.goodbye === '1' ? true : false });
   });
 
-  app.post('/login', (req, res) => {
+  app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    const user = get('SELECT * FROM users WHERE email = ?', [email]);
+    const user = await get('SELECT * FROM users WHERE email = $1', [email]);
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.render('login', { error: 'Invalid email or password' });
     }
@@ -85,14 +86,14 @@ async function start() {
     res.render('signup', { error: null });
   });
 
-  app.post('/signup', (req, res) => {
+  app.post('/signup', async (req, res) => {
     const { username, email, password } = req.body;
-    const existing = get('SELECT id FROM users WHERE email = ? OR username = ?', [email, username]);
+    const existing = await get('SELECT id FROM users WHERE email = $1 OR username = $2', [email, username]);
     if (existing) {
       return res.render('signup', { error: 'Username or email already exists' });
     }
     const hash = bcrypt.hashSync(password, 10);
-    run('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, hash]);
+    await run('INSERT INTO users (username, email, password) VALUES ($1, $2, $3)', [username, email, hash]);
     res.redirect('/login');
   });
 
@@ -107,15 +108,15 @@ async function start() {
     res.render('forgot-password', { error: null, success: null, token: null });
   });
 
-  app.post('/forgot-password', (req, res) => {
+  app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
-    const user = get('SELECT id FROM users WHERE email = ?', [email]);
+    const user = await get('SELECT id FROM users WHERE email = $1', [email]);
     if (!user) {
       return res.render('forgot-password', { error: 'Email not found', success: null, token: null });
     }
     const token = crypto.randomBytes(20).toString('hex');
     const expires = new Date(Date.now() + 3600000).toISOString();
-    run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)', [user.id, token, expires]);
+    await run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)', [user.id, token, expires]);
     const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
     sendEmail(email, 'Password Reset - TechHub Company',
       `<h2>Password Reset</h2><p>Click <a href="${siteUrl}/reset-password/${token}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`);
@@ -126,26 +127,26 @@ async function start() {
     });
   });
 
-  app.get('/reset-password/:token', (req, res) => {
+  app.get('/reset-password/:token', async (req, res) => {
     const t = req.params.token;
-    const row = get('SELECT * FROM reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime("now")', [t]);
+    const row = await get('SELECT * FROM reset_tokens WHERE token = $1 AND used = 0 AND expires_at > NOW()', [t]);
     if (!row) return res.send('Invalid or expired reset token.');
     res.render('reset-password', { token: t, error: null, success: null });
   });
 
-  app.post('/reset-password', (req, res) => {
+  app.post('/reset-password', async (req, res) => {
     const { token, password } = req.body;
-    const row = get('SELECT * FROM reset_tokens WHERE token = ? AND used = 0 AND expires_at > datetime("now")', [token]);
+    const row = await get('SELECT * FROM reset_tokens WHERE token = $1 AND used = 0 AND expires_at > NOW()', [token]);
     if (!row) return res.render('reset-password', { token, error: 'Invalid or expired token.', success: null });
     const hash = bcrypt.hashSync(password, 10);
-    run('UPDATE users SET password = ? WHERE id = ?', [hash, row.user_id]);
-    run('UPDATE reset_tokens SET used = 1 WHERE id = ?', [row.id]);
+    await run('UPDATE users SET password = $1 WHERE id = $2', [hash, row.user_id]);
+    await run('UPDATE reset_tokens SET used = 1 WHERE id = $1', [row.id]);
     res.render('reset-password', { token: null, error: null, success: 'Password reset successful! <a href="/login">Login now</a>' });
   });
 
-  app.get('/services', isAuth, (req, res) => {
-    const services = all('SELECT * FROM services WHERE is_active = 1 ORDER BY category, name');
-    const allOpts = all('SELECT * FROM service_options');
+  app.get('/services', isAuth, async (req, res) => {
+    const services = await all('SELECT * FROM services WHERE is_active = 1 ORDER BY category, name');
+    const allOpts = await all('SELECT * FROM service_options');
     const optsBySvc = {};
     for (const o of allOpts) {
       if (!optsBySvc[o.service_id]) optsBySvc[o.service_id] = [];
@@ -154,22 +155,22 @@ async function start() {
     res.render('services', { user: req.session.user, services, optsBySvc, formatTZS });
   });
 
-  app.get('/order/:serviceId', isAuth, (req, res) => {
-    const service = get('SELECT * FROM services WHERE id = ? AND is_active = 1', [req.params.serviceId]);
+  app.get('/order/:serviceId', isAuth, async (req, res) => {
+    const service = await get('SELECT * FROM services WHERE id = $1 AND is_active = 1', [req.params.serviceId]);
     if (!service) return res.redirect('/services');
-    const options = service.has_options ? all('SELECT * FROM service_options WHERE service_id = ?', [service.id]) : [];
+    const options = service.has_options ? await all('SELECT * FROM service_options WHERE service_id = $1', [service.id]) : [];
     const queryOpt = req.query.opt || null;
     res.render('order', { user: req.session.user, service, options, queryOpt, error: null, formatTZS });
   });
 
-  app.post('/order/quote', isAuth, (req, res) => {
+  app.post('/order/quote', isAuth, async (req, res) => {
     const { service_id, name, phone, selected_option, location, quantity, description } = req.body;
-    const service = get('SELECT * FROM services WHERE id = ? AND is_active = 1', [service_id]);
+    const service = await get('SELECT * FROM services WHERE id = $1 AND is_active = 1', [service_id]);
     if (!service) return res.redirect('/services');
     let optInfo = '';
     if (selected_option) optInfo = `Package: ${selected_option} | `;
     const details = `${optInfo}Location: ${location || 'N/A'} | Qty: ${quantity || 'N/A'} | Desc: ${description || 'N/A'}`;
-    run('INSERT INTO orders (user_id, customer_name, customer_email, service, price, phone, status, service_option, is_confirmed) VALUES (?, ?, ?, ?, 0, ?, ?, ?, 1)',
+    await run('INSERT INTO orders (user_id, customer_name, customer_email, service, price, phone, status, service_option, is_confirmed) VALUES ($1, $2, $3, $4, 0, $5, $6, $7, 1)',
       [req.session.user.id, name || req.session.user.username, req.session.user.email, service.name, phone, 'quote', details]);
     sendEmail('sosthenes688@gmail.com', `Service Request: ${service.name} from ${name}`,
       `<h2>New Service Request</h2><p><strong>Service:</strong> ${service.name}</p><p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p>${selected_option ? `<p><strong>Package:</strong> ${selected_option}</p>` : ''}<p><strong>Location:</strong> ${location || 'Not specified'}</p><p><strong>Quantity:</strong> ${quantity || 'Not specified'}</p><p><strong>Description:</strong> ${description || 'Not specified'}</p><hr><p>Login to admin to view all requests.</p>`);
@@ -177,28 +178,27 @@ async function start() {
   });
 
   app.get('/order/quote-success', isAuth, (req, res) => {
-    res.render('quote-success', { user: req.session.user, service: req.query.service, location: req.query.location, quantity: req.query.quantity, desc: req.query.desc });
+    res.render('quote-success', { user: req.session.user, service: req.query.service, pkg: req.query.pkg, location: req.query.location, quantity: req.query.quantity, desc: req.query.desc });
   });
 
-  app.post('/order', isAuth, (req, res) => {
+  app.post('/order', isAuth, async (req, res) => {
     const { service_id, service_option_id, phone, payment_network } = req.body;
-    const service = get('SELECT * FROM services WHERE id = ? AND is_active = 1', [service_id]);
+    const service = await get('SELECT * FROM services WHERE id = $1 AND is_active = 1', [service_id]);
     if (!service) return res.redirect('/services');
 
     let finalPrice = service.price;
     let optionName = '';
     if (service.has_options && service_option_id) {
-      const opt = get('SELECT * FROM service_options WHERE id = ? AND service_id = ?', [service_option_id, service_id]);
+      const opt = await get('SELECT * FROM service_options WHERE id = $1 AND service_id = $2', [service_option_id, service_id]);
       if (opt) { finalPrice = opt.price; optionName = opt.name; }
     }
 
     const user = req.session.user;
     const code = crypto.randomInt(100000, 999999).toString();
 
-    run('INSERT INTO orders (user_id, customer_name, customer_email, service, service_option, price, phone, payment_network, confirmation_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    const result = await run('INSERT INTO orders (user_id, customer_name, customer_email, service, service_option, price, phone, payment_network, confirmation_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
       [user.id, user.username, user.email, service.name, optionName, finalPrice, phone, payment_network, code]);
-
-    const order = get('SELECT id FROM orders WHERE user_id = ? AND confirmation_code = ? ORDER BY id DESC LIMIT 1', [user.id, code]);
+    const order = result.rows[0];
 
     sendEmail(user.email, `Order Confirmation Code - ${formatTZS(finalPrice)}`,
       `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p><hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`);
@@ -223,30 +223,30 @@ async function start() {
     });
   });
 
-  app.post('/order/confirm', isAuth, (req, res) => {
+  app.post('/order/confirm', isAuth, async (req, res) => {
     const { order_id, code } = req.body;
-    const order = get('SELECT * FROM orders WHERE id = ? AND user_id = ?', [order_id, req.session.user.id]);
+    const order = await get('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [order_id, req.session.user.id]);
     if (!order) return res.status(404).send('Order not found');
     if (order.confirmation_code === code) {
-      run('UPDATE orders SET is_confirmed = 1, status = ? WHERE id = ?', ['pending', order_id]);
+      await run('UPDATE orders SET is_confirmed = 1, status = $1 WHERE id = $2', ['pending', order_id]);
       res.redirect('/dashboard?msg=Order confirmed! Wait for admin approval.');
     } else {
       res.redirect('/dashboard?msg=Invalid confirmation code. Check your email.&error=1');
     }
   });
 
-  app.post('/order/proof', isAuth, (req, res) => {
+  app.post('/order/proof', isAuth, async (req, res) => {
     const { order_id, transaction_id } = req.body;
-    const order = get('SELECT * FROM orders WHERE id = ? AND user_id = ?', [order_id, req.session.user.id]);
+    const order = await get('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [order_id, req.session.user.id]);
     if (!order) return res.status(404).send('Order not found');
-    run('UPDATE orders SET transaction_id = ?, payment_proof_date = datetime("now"), payment_verified = 0 WHERE id = ?',
+    await run('UPDATE orders SET transaction_id = $1, payment_proof_date = NOW(), payment_verified = 0 WHERE id = $2',
       [transaction_id, order_id]);
     res.redirect('/dashboard?msg=Payment proof submitted! Admin will verify it.');
   });
 
-  app.get('/dashboard', isAuth, (req, res) => {
+  app.get('/dashboard', isAuth, async (req, res) => {
     const uid = req.session.user.id;
-    const allOrders = all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', [uid]);
+    const allOrders = await all('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     const pendingOrders = allOrders.filter(o => o.status === 'pending' || o.is_confirmed === 0);
     const activeOrders = allOrders.filter(o => o.status === 'confirmed' || o.status === 'quote');
     const completedOrders = allOrders.filter(o => o.status === 'completed');
@@ -270,9 +270,9 @@ async function start() {
     });
   });
 
-  app.post('/contact', (req, res) => {
+  app.post('/contact', async (req, res) => {
     const { name, email, message } = req.body;
-    run('INSERT INTO messages (name, email, message) VALUES (?, ?, ?)', [name, email, message]);
+    await run('INSERT INTO messages (name, email, message) VALUES ($1, $2, $3)', [name, email, message]);
     transporter.sendMail({
       from: '"TechHub Contact" <sosthenes688@gmail.com>',
       to: 'sosthenes688@gmail.com',
@@ -282,12 +282,12 @@ async function start() {
     res.json({ success: true, message: 'Thank you! We will get back to you shortly.' });
   });
 
-  app.get('/admin', isAuth, isAdmin, (req, res) => {
-    const users = all('SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC');
-    const messages = all('SELECT * FROM messages ORDER BY created_at DESC');
-    const orders = all('SELECT * FROM orders ORDER BY created_at DESC');
-    const services = all('SELECT * FROM services ORDER BY category, name');
-    const allOpts = all('SELECT * FROM service_options');
+  app.get('/admin', isAuth, isAdmin, async (req, res) => {
+    const users = await all('SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC');
+    const messages = await all('SELECT * FROM messages ORDER BY created_at DESC');
+    const orders = await all('SELECT * FROM orders ORDER BY created_at DESC');
+    const services = await all('SELECT * FROM services ORDER BY category, name');
+    const allOpts = await all('SELECT * FROM service_options');
     const optsBySvc = {};
     for (const o of allOpts) {
       if (!optsBySvc[o.service_id]) optsBySvc[o.service_id] = [];
@@ -303,103 +303,103 @@ async function start() {
     res.render('admin', { user: req.session.user, users, messages, orders, services, options: allOpts, optsBySvc, stats, formatTZS, welcome: req.query.welcome === '1' ? true : false });
   });
 
-  app.post('/admin/service/add', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/service/add', isAuth, isAdmin, async (req, res) => {
     const { name, description, long_description, price, category, has_options, needs_quote } = req.body;
-    run('INSERT INTO services (name, description, long_description, price, category, has_options, needs_quote) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    await run('INSERT INTO services (name, description, long_description, price, category, has_options, needs_quote) VALUES ($1, $2, $3, $4, $5, $6, $7)',
       [name, description, long_description || '', parseFloat(price), category, has_options === 'on' ? 1 : 0, needs_quote === 'on' ? 1 : 0]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/service/edit', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/service/edit', isAuth, isAdmin, async (req, res) => {
     const { id, name, description, long_description, price, category, has_options, needs_quote } = req.body;
-    run('UPDATE services SET name=?, description=?, long_description=?, price=?, category=?, has_options=?, needs_quote=? WHERE id=?',
+    await run('UPDATE services SET name=$1, description=$2, long_description=$3, price=$4, category=$5, has_options=$6, needs_quote=$7 WHERE id=$8',
       [name, description, long_description || '', parseFloat(price), category, has_options === 'on' ? 1 : 0, needs_quote === 'on' ? 1 : 0, id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/service/toggle', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/service/toggle', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    const s = get('SELECT is_active FROM services WHERE id = ?', [id]);
-    if (s) run('UPDATE services SET is_active = ? WHERE id = ?', [s.is_active ? 0 : 1, id]);
+    const s = await get('SELECT is_active FROM services WHERE id = $1', [id]);
+    if (s) await run('UPDATE services SET is_active = $1 WHERE id = $2', [s.is_active ? 0 : 1, id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/service/delete', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/service/delete', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('DELETE FROM service_options WHERE service_id = ?', [id]);
-    run('DELETE FROM services WHERE id = ?', [id]);
+    await run('DELETE FROM service_options WHERE service_id = $1', [id]);
+    await run('DELETE FROM services WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/option/add', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/option/add', isAuth, isAdmin, async (req, res) => {
     const { service_id, name, price, description } = req.body;
-    run('INSERT INTO service_options (service_id, name, price, description) VALUES (?, ?, ?, ?)',
+    await run('INSERT INTO service_options (service_id, name, price, description) VALUES ($1, $2, $3, $4)',
       [service_id, name, parseFloat(price), description || '']);
     res.redirect('/admin');
   });
 
-  app.post('/admin/option/edit', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/option/edit', isAuth, isAdmin, async (req, res) => {
     const { id, name, price, description } = req.body;
-    run('UPDATE service_options SET name=?, price=?, description=? WHERE id=?',
+    await run('UPDATE service_options SET name=$1, price=$2, description=$3 WHERE id=$4',
       [name, parseFloat(price), description || '', id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/option/toggle', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/option/toggle', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    const o = get('SELECT is_active FROM service_options WHERE id = ?', [id]);
-    if (o) run('UPDATE service_options SET is_active = ? WHERE id = ?', [o.is_active ? 0 : 1, id]);
+    const o = await get('SELECT is_active FROM service_options WHERE id = $1', [id]);
+    if (o) await run('UPDATE service_options SET is_active = $1 WHERE id = $2', [o.is_active ? 0 : 1, id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/option/delete', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/option/delete', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('DELETE FROM service_options WHERE id = ?', [id]);
+    await run('DELETE FROM service_options WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/order/status', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/order/status', isAuth, isAdmin, async (req, res) => {
     const { id, status } = req.body;
-    run('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+    await run('UPDATE orders SET status = $1 WHERE id = $2', [status, id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/message/read', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/message/read', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('UPDATE messages SET is_read = 1 WHERE id = ?', [id]);
+    await run('UPDATE messages SET is_read = 1 WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/message/delete', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/message/delete', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('DELETE FROM messages WHERE id = ?', [id]);
+    await run('DELETE FROM messages WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/user/delete', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/user/delete', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('DELETE FROM orders WHERE user_id = ?', [id]);
-    run('DELETE FROM reset_tokens WHERE user_id = ?', [id]);
-    run('DELETE FROM users WHERE id = ? AND role != ?', [id, 'admin']);
+    await run('DELETE FROM orders WHERE user_id = $1', [id]);
+    await run('DELETE FROM reset_tokens WHERE user_id = $1', [id]);
+    await run('DELETE FROM users WHERE id = $1 AND role != $2', [id, 'admin']);
     res.redirect('/admin');
   });
 
-  app.post('/admin/payment/verify', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/payment/verify', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('UPDATE orders SET payment_verified = 1 WHERE id = ?', [id]);
+    await run('UPDATE orders SET payment_verified = 1 WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/payment/unverify', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/payment/unverify', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    run('UPDATE orders SET payment_verified = 0 WHERE id = ?', [id]);
+    await run('UPDATE orders SET payment_verified = 0 WHERE id = $1', [id]);
     res.redirect('/admin');
   });
 
-  app.post('/admin/service/needs_quote', isAuth, isAdmin, (req, res) => {
+  app.post('/admin/service/needs_quote', isAuth, isAdmin, async (req, res) => {
     const { id } = req.body;
-    const s = get('SELECT needs_quote FROM services WHERE id = ?', [id]);
-    if (s) run('UPDATE services SET needs_quote = ? WHERE id = ?', [s.needs_quote ? 0 : 1, id]);
+    const s = await get('SELECT needs_quote FROM services WHERE id = $1', [id]);
+    if (s) await run('UPDATE services SET needs_quote = $1 WHERE id = $2', [s.needs_quote ? 0 : 1, id]);
     res.redirect('/admin');
   });
 
