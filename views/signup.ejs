@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-box">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <p class="motto">&#8220;Empowering Your Digital Future&#8221;</p>
+      <p class="aim">&#128205; Our Aim: To provide innovative, reliable &amp; affordable IT solutions across Tanzania</p>
+      <h2>Create Account</h2>
+      <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
+      <form method="POST" action="/signup">
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit" class="btn">Sign Up</button>
+      </form>
+      <p class="auth-link">Already have an account? <a href="/login">Login</a></p>
+    </div>
+  </div>
+</body>
+</html>
