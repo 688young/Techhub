@@ -104,6 +104,88 @@ async function initDB() {
     )
   `);
 
+  try { await run('ALTER TABLE services ADD COLUMN IF NOT EXISTS has_options INTEGER DEFAULT 0'); } catch(e) {}
+  try { await run('ALTER TABLE services ADD COLUMN IF NOT EXISTS long_description TEXT DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE services ADD COLUMN IF NOT EXISTS needs_quote INTEGER DEFAULT 0'); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS service_option TEXT DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS confirmation_code VARCHAR(50) DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS is_confirmed INTEGER DEFAULT 0'); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_network VARCHAR(100) DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(100) DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255) DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_verified INTEGER DEFAULT 0'); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_date TIMESTAMP'); } catch(e) {}
+
+  await run(`UPDATE services SET needs_quote = 1, description = 'Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration.', long_description = 'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Affordable monthly packages with 24/7 support.' WHERE name = 'Cloud Solutions'`);
+  await run(`UPDATE services SET needs_quote = 1 WHERE name IN ('Network Setup & Security', 'Computer Maintenance', 'CCTV Camera Installation', 'Software Development', 'Web Development', 'IT Support & Maintenance', 'Data Backup & Recovery', 'Consulting & Strategy')`);
+  await run(`UPDATE services SET needs_quote = 0, price = 200000 WHERE name = 'Graphics Design'`);
+  await run(`UPDATE services SET needs_quote = 0, price = 300000 WHERE name = 'Social Media Management'`);
+  await run(`UPDATE services SET needs_quote = 0, price = 10000 WHERE name = 'Social Media Boosting'`);
+
+  const socialSvc = await get('SELECT id FROM services WHERE name = $1', ['Social Media Boosting']);
+  if (socialSvc) {
+    await run('UPDATE services SET has_options = 1 WHERE name = $1', ['Social Media Boosting']);
+    const optCount = await get('SELECT COUNT(*) as c FROM service_options WHERE service_id = $1', [socialSvc.id]);
+    if (parseInt(optCount.c) === 0) {
+      for (const o of [
+        ['Instagram Followers 1K', '1,000 Instagram followers', 10000],
+        ['Instagram Followers 2K', '2,000 Instagram followers', 15000],
+        ['Instagram Likes 1K', '1,000 Instagram likes', 2000],
+        ['Facebook Followers 1K', '1,000 Facebook followers', 8000],
+        ['Twitter Followers 1K', '1,000 Twitter followers', 8000],
+        ['YouTube Subscribers 1K', '1,000 YouTube subscribers', 15000],
+        ['TikTok Followers 1K', '1,000 TikTok followers', 10000],
+      ]) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [socialSvc.id, o[0], o[1], o[2]]);
+      }
+    }
+  }
+
+  const cctvSvc = await get('SELECT id FROM services WHERE name = $1', ['CCTV Camera Installation']);
+  if (cctvSvc) {
+    await run('UPDATE services SET has_options = 1 WHERE name = $1', ['CCTV Camera Installation']);
+    const optCount = await get('SELECT COUNT(*) as c FROM service_options WHERE service_id = $1', [cctvSvc.id]);
+    if (parseInt(optCount.c) === 0) {
+      for (const c of [
+        ['Dome Camera (Indoor)', 'Compact indoor camera', 0],
+        ['Bullet Camera (Outdoor)', 'Weatherproof outdoor camera', 0],
+        ['PTZ Camera (Pan-Tilt-Zoom)', 'Motorized remote-controlled camera', 0],
+        ['IP / WiFi Camera', 'Wireless WiFi camera', 0],
+        ['4MP Security Camera', 'High-resolution 4MP', 0],
+        ['8MP (4K) Security Camera', 'Ultra HD 4K', 0],
+        ['Night Vision Camera', 'Enhanced IR night vision', 0],
+        ['Solar Powered Camera', 'Off-grid solar powered', 0],
+      ]) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [cctvSvc.id, c[0], c[1], c[2]]);
+      }
+    }
+  }
+
+  const cloudSvc = await get('SELECT id FROM services WHERE name = $1', ['Cloud Solutions']);
+  if (cloudSvc) {
+    await run('UPDATE services SET has_options = 1 WHERE name = $1', ['Cloud Solutions']);
+    const optCount = await get('SELECT COUNT(*) as c FROM service_options WHERE service_id = $1', [cloudSvc.id]);
+    if (parseInt(optCount.c) === 0) {
+      for (const o of [
+        ['Shared Hosting (Basic)', 'Single website, 10GB storage, 100GB bandwidth', 0],
+        ['Business Hosting', '5 websites, 50GB storage, unlimited bandwidth, free SSL', 0],
+        ['VPS Hosting (2GB RAM)', '2 vCPU, 2GB RAM, 40GB SSD, full root access', 0],
+        ['VPS Hosting (4GB RAM)', '2 vCPU, 4GB RAM, 80GB SSD, full root access', 0],
+        ['VPS Hosting (8GB RAM)', '4 vCPU, 8GB RAM, 160GB SSD, full root access', 0],
+        ['Domain Registration (.com/.net/.org)', 'Register or transfer your domain name', 0],
+        ['Business Email Setup', 'Professional email @yourdomain.com', 0],
+        ['Cloud Migration Service', 'Migrate your website, apps, or data to the cloud', 0],
+        ['Data Backup (Cloud)', 'Automated daily backup for your files/databases', 0],
+        ['Dedicated Server', 'Full dedicated hardware, custom specs, 24/7 support', 0],
+      ]) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [cloudSvc.id, o[0], o[1], o[2]]);
+      }
+    }
+  }
+
   const adminExists = await get('SELECT id FROM users WHERE role = $1', ['admin']);
   if (!adminExists) {
     const hash = bcrypt.hashSync('admin123', 10);
