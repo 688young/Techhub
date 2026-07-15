@@ -17,40 +17,81 @@
       </nav>
     </div>
   </header>
-
   <section class="section">
     <div class="container">
-      <h2>Order Service</h2>
-      <div class="order-layout">
-        <div class="order-details">
-          <h3><%= service.name %></h3>
-          <p><%= service.long_description %></p>
-          <p class="price">Price: <%= formatTZS(service.price) %></p>
-        </div>
-        <div class="order-form">
-          <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
-          <form method="POST" action="/order">
-            <input type="hidden" name="service_id" value="<%= service.id %>" />
+      <% if (service.needs_quote) { %>
+        <h2>Request Service</h2>
+        <div class="order-layout">
+          <div class="order-details">
+            <h3><%= service.name %></h3>
+            <p><%= service.long_description %></p>
+            <p style="color:var(--accent-1);font-weight:700">&#128205; This service requires an on-site visit. Our team will contact you.</p>
             <% if (options.length > 0) { %>
-              <label>Choose Option:</label>
-              <select name="service_option_id" required>
-                <option value="">-- Select --</option>
-                <% options.forEach(function(o) { %>
-                  <option value="<%= o.id %>" <%= queryOpt == o.id ? 'selected' : '' %>><%= o.name %> - <%= formatTZS(o.price) %></option>
-                <% }); %>
-              </select>
+              <div style="margin-top:14px"><strong>Available Options:</strong>
+                <ul style="margin-top:6px;padding-left:18px">
+                  <% options.forEach(function(o) { %>
+                    <li style="margin-bottom:4px;font-size:0.85rem;color:var(--text-secondary)"><%= o.name %> — <%= o.description %></li>
+                  <% }); %>
+                </ul>
+              </div>
             <% } %>
-            <input type="text" name="phone" placeholder="Your Phone Number" required />
-            <label>Payment Network:</label>
-            <select name="payment_network" required>
-              <option value="">-- Select Payment Method --</option>
-              <option value="MIX by YAS">MIX by YAS (45490505)</option>
-              <option value="Equity Bank">Equity Bank (3015111947559)</option>
-            </select>
-            <button type="submit" class="btn">Place Order</button>
-          </form>
+          </div>
+          <div class="order-form">
+            <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
+            <form method="POST" action="/order/quote">
+              <input type="hidden" name="service_id" value="<%= service.id %>" />
+              <input type="text" name="name" placeholder="Your Full Name" value="<%= user.username %>" required />
+              <input type="text" name="phone" placeholder="Phone Number (e.g. 0618001980)" required />
+              <select name="location" required>
+                <option value="">-- Select Location --</option>
+                <option value="Home / Residence">Home / Residence</option>
+                <option value="Office">Office</option>
+                <option value="Factory / Warehouse">Factory / Warehouse</option>
+                <option value="School / Institution">School / Institution</option>
+                <option value="Shop / Store">Shop / Store</option>
+                <option value="Hotel / Restaurant">Hotel / Restaurant</option>
+                <option value="Hospital / Clinic">Hospital / Clinic</option>
+                <option value="Other">Other</option>
+              </select>
+              <input type="number" name="quantity" placeholder="Quantity (e.g. number of cameras, computers)" min="1" />
+              <textarea name="description" placeholder="Describe what you need..." rows="4"></textarea>
+              <button type="submit" class="btn">Submit Request</button>
+            </form>
+          </div>
         </div>
-      </div>
+      <% } else { %>
+        <h2>Order Service</h2>
+        <div class="order-layout">
+          <div class="order-details">
+            <h3><%= service.name %></h3>
+            <p><%= service.long_description %></p>
+            <p class="price">Price: <%= formatTZS(service.price) %></p>
+          </div>
+          <div class="order-form">
+            <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
+            <form method="POST" action="/order">
+              <input type="hidden" name="service_id" value="<%= service.id %>" />
+              <% if (options.length > 0) { %>
+                <label>Choose Option:</label>
+                <select name="service_option_id" required>
+                  <option value="">-- Select --</option>
+                  <% options.forEach(function(o) { %>
+                    <option value="<%= o.id %>" <%= queryOpt == o.id ? 'selected' : '' %>><%= o.name %> - <%= formatTZS(o.price) %></option>
+                  <% }); %>
+                </select>
+              <% } %>
+              <input type="text" name="phone" placeholder="Your Phone Number" required />
+              <label>Payment Network:</label>
+              <select name="payment_network" required>
+                <option value="">-- Select Payment Method --</option>
+                <option value="MIX by YAS">MIX by YAS (45490505)</option>
+                <option value="Equity Bank">Equity Bank (3015111947559)</option>
+              </select>
+              <button type="submit" class="btn">Place Order</button>
+            </form>
+          </div>
+        </div>
+      <% } %>
     </div>
   </section>
 </body>
