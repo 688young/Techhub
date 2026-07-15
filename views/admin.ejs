@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">ADMIN PANEL</h1>
+      <nav>
+        <a href="/admin">Dashboard</a>
+        <a href="/logout">Logout (<%= user.username %>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <% if (locals.welcome) { %>
+    <div id="welcomeOverlay" class="welcome-overlay">
+      <div class="welcome-box">
+        <div class="welcome-icon">&#10003;</div>
+        <h1>Hello, Admin!</h1>
+        <p>You are welcome!</p>
+        <button onclick="closeWelcome()" class="btn">Continue</button>
+      </div>
+    </div>
+  <% } %>
+
+  <section class="section">
+    <div class="container">
+      <h2>Dashboard Overview</h2>
+      <div class="admin-stats">
+        <div class="stat-box stat-users pulse-in">Users: <%= stats.total_users %></div>
+        <div class="stat-box stat-orders pulse-in">Orders: <%= stats.total_orders %></div>
+        <div class="stat-box stat-pending pulse-in">Pending: <%= stats.pending_orders %></div>
+        <div class="stat-box stat-messages pulse-in">Messages: <%= stats.total_messages %></div>
+        <div class="stat-box stat-services pulse-in">Services: <%= stats.total_services %></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="admin-users">
+    <div class="container">
+      <h2>All Users (<%= users.length %>)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Registered</th><th>Action</th></tr></thead>
+          <tbody>
+            <% users.forEach(function(u) { %>
+              <tr>
+                <td><%= u.id %></td>
+                <td><%= u.username %></td>
+                <td><%= u.email %></td>
+                <td><%= u.role %></td>
+                <td><%= u.created_at %></td>
+                <td>
+                  <% if (u.role !== 'admin') { %>
+                    <form method="POST" action="/admin/user/delete" style="display:inline" onsubmit="return confirm('Delete user <%= u.username %> and all their orders?')">
+                      <input type="hidden" name="id" value="<%= u.id %>" />
+                      <button type="submit" class="btn-sm btn-danger">Delete</button>
+                    </form>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="admin-pending">
+    <div class="container">
+      <h2>Pending Orders</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirmed</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <% orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).forEach(function(o) { %>
+              <tr class="<%= o.is_confirmed === 0 ? 'unread' : '' %>">
+                <td><%= o.id %></td>
+                <td><%= o.customer_name %></td>
+                <td><%= o.customer_email %></td>
+                <td><%= o.service %></td>
+                <td><%= formatTZS(o.price) %></td>
+                <td><%= o.phone || '-' %></td>
+                <td><%= o.payment_network || '-' %></td>
+                <td><%= o.confirmation_code || '-' %></td>
+                <td><%= o.is_confirmed ? 'Yes' : 'No' %></td>
+                <td><span class="status-<%= o.status %>"><%= o.status %></span></td>
+                <td><%= o.created_at %></td>
+                <td>
+                  <form method="POST" action="/admin/order/status" style="display:inline-flex;gap:4px;flex-wrap:wrap">
+                    <input type="hidden" name="id" value="<%= o.id %>" />
+                    <select name="status">
+                      <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                      <option value="confirmed" <%= o.status === 'confirmed' ? 'selected' : '' %>>Confirm</option>
+                      <option value="completed" <%= o.status === 'completed' ? 'selected' : '' %>>Complete</option>
+                      <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>Cancel</option>
+                    </select>
+                    <button type="submit" class="btn-sm">Go</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+            <% if (orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).length === 0) { %>
+              <tr><td colspan="12" style="text-align:center;color:#999">No pending orders</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="admin-orders">
+    <div class="container">
+      <h2>All Orders (<%= orders.length %>)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirmed</th><th>Payment Proof</th><th>Payment Verified</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <% orders.forEach(function(o) { %>
+              <tr>
+                <td><%= o.id %></td>
+                <td><%= o.customer_name %></td>
+                <td><%= o.customer_email %></td>
+                <td><%= o.service %><%= o.service_option ? ' ('+o.service_option+')' : '' %></td>
+                <td><%= formatTZS(o.price) %></td>
+                <td><%= o.phone || '-' %></td>
+                <td><%= o.payment_network || '-' %></td>
+                <td><%= o.confirmation_code || '-' %></td>
+                <td><%= o.is_confirmed ? 'Yes' : 'No' %></td>
+                <td><%= o.transaction_id || '-' %></td>
+                <td>
+                  <% if (o.transaction_id) { %>
+                    <%= o.payment_verified ? 'Verified' : 'Pending' %>
+                    <% if (!o.payment_verified) { %>
+                      <form method="POST" action="/admin/payment/verify" style="display:inline">
+                        <input type="hidden" name="id" value="<%= o.id %>" />
+                        <button type="submit" class="btn-sm" style="background:#27ae60;color:#fff">Verify</button>
+                      </form>
+                    <% } else { %>
+                      <form method="POST" action="/admin/payment/unverify" style="display:inline">
+                        <input type="hidden" name="id" value="<%= o.id %>" />
+                        <button type="submit" class="btn-sm btn-danger">Unverify</button>
+                      </form>
+                    <% } %>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td><span class="status-<%= o.status %>"><%= o.status %></span></td>
+                <td><%= o.created_at %></td>
+                <td>
+                  <form method="POST" action="/admin/order/status" style="display:inline-flex;gap:4px;flex-wrap:wrap">
+                    <input type="hidden" name="id" value="<%= o.id %>" />
+                    <select name="status">
+                      <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                      <option value="confirmed" <%= o.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
+                      <option value="completed" <%= o.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                      <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                    </select>
+                    <button type="submit" class="btn-sm">Go</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="admin-messages">
+    <div class="container">
+      <h2>Messages (<%= messages.length %>)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Message</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% messages.forEach(function(m) { %>
+              <tr class="<%= !m.is_read ? 'unread' : '' %>">
+                <td><%= m.id %></td>
+                <td><%= m.name %></td>
+                <td><%= m.email %></td>
+                <td><%= m.message.length > 60 ? m.message.substring(0,60)+'...' : m.message %></td>
+                <td><%= m.created_at %></td>
+                <td>
+                  <form method="POST" action="/admin/message/read" style="display:inline">
+                    <input type="hidden" name="id" value="<%= m.id %>" />
+                    <button type="submit" class="btn-sm"><%= !m.is_read ? 'Mark Read' : 'Read' %></button>
+                  </form>
+                  <form method="POST" action="/admin/message/delete" style="display:inline" onsubmit="return confirm('Delete message?')">
+                    <input type="hidden" name="id" value="<%= m.id %>" />
+                    <button type="submit" class="btn-sm btn-danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="admin-services">
+    <div class="container">
+      <h2>Manage Services (<%= services.length %>)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Options</th><th>Active</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% services.forEach(function(s) { %>
+              <tr>
+                <td><%= s.id %></td>
+                <td><%= s.name %></td>
+                <td><%= s.category %></td>
+                <td><%= formatTZS(s.price) %></td>
+                <td><%= s.has_options ? 'Yes' : 'No' %></td>
+                <td><%= s.is_active ? 'Yes' : 'No' %></td>
+                <td>
+                  <button class="btn-sm" onclick="editSvc(this)" data-id="<%= s.id %>" data-name="<%- s.name %>" data-desc="<%- s.description || '' %>" data-long="<%- s.long_description || '' %>" data-price="<%= s.price %>" data-category="<%- s.category %>" data-hasoptions="<%= s.has_options || 0 %>">Edit</button>
+                  <form method="POST" action="/admin/service/toggle" style="display:inline">
+                    <input type="hidden" name="id" value="<%= s.id %>" />
+                    <button type="submit" class="btn-sm"><%= s.is_active ? 'Disable' : 'Enable' %></button>
+                  </form>
+                  <form method="POST" action="/admin/service/delete" style="display:inline" onsubmit="return confirm('Delete service and all its options?')">
+                    <input type="hidden" name="id" value="<%= s.id %>" />
+                    <button type="submit" class="btn-sm btn-danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-accordion">
+        <button class="accordion-btn" onclick="toggleSection('addService')">+ Add New Service</button>
+        <div id="addService" class="accordion-content">
+          <form method="POST" action="/admin/service/add" class="admin-form">
+            <input type="text" name="name" placeholder="Service Name" required />
+            <input type="text" name="description" placeholder="Short Description" />
+            <textarea name="long_description" placeholder="Long Description"></textarea>
+            <input type="number" name="price" placeholder="Price (TZS)" required />
+            <select name="category">
+              <option value="general">General</option>
+              <option value="networking">Networking</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="security">Security</option>
+              <option value="design">Design</option>
+              <option value="marketing">Marketing</option>
+              <option value="cloud">Cloud</option>
+              <option value="development">Development</option>
+              <option value="support">Support</option>
+              <option value="consulting">Consulting</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+              <input type="checkbox" name="has_options" /> Has options (e.g. camera types)
+            </label>
+            <button type="submit" class="btn">Add Service</button>
+          </form>
+        </div>
+
+        <button class="accordion-btn" onclick="toggleSection('editService')">- Edit Service</button>
+        <div id="editService" class="accordion-content" style="display:none">
+          <form method="POST" action="/admin/service/edit" class="admin-form">
+            <input type="hidden" name="id" id="edit-id" />
+            <input type="text" name="name" id="edit-name" placeholder="Service Name" required />
+            <input type="text" name="description" id="edit-desc" placeholder="Short Description" />
+            <textarea name="long_description" id="edit-long" placeholder="Long Description"></textarea>
+            <input type="number" name="price" id="edit-price" placeholder="Price (TZS)" required />
+            <select name="category" id="edit-category">
+              <option value="general">General</option>
+              <option value="networking">Networking</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="security">Security</option>
+              <option value="design">Design</option>
+              <option value="marketing">Marketing</option>
+              <option value="cloud">Cloud</option>
+              <option value="development">Development</option>
+              <option value="support">Support</option>
+              <option value="consulting">Consulting</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
+              <input type="checkbox" name="has_options" id="edit-has-options" /> Has options
+            </label>
+            <button type="submit" class="btn">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-light" id="admin-options">
+    <div class="container">
+      <h2>Service Options (<%= options.length %>)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Service</th><th>Name</th><th>Description</th><th>Price</th><th>Active</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% options.forEach(function(o) { %>
+              <tr>
+                <td><%= o.id %></td>
+                <td><%= o.service_name %></td>
+                <td><%= o.name %></td>
+                <td><%= o.description %></td>
+                <td><%= formatTZS(o.price) %></td>
+                <td><%= o.is_active ? 'Yes' : 'No' %></td>
+                <td>
+                  <button class="btn-sm" onclick="editOpt(this)" data-id="<%= o.id %>" data-name="<%- o.name %>" data-desc="<%- o.description || '' %>" data-price="<%= o.price %>">Edit</button>
+                  <form method="POST" action="/admin/option/toggle" style="display:inline">
+                    <input type="hidden" name="id" value="<%= o.id %>" />
+                    <button type="submit" class="btn-sm"><%= o.is_active ? 'Disable' : 'Enable' %></button>
+                  </form>
+                  <form method="POST" action="/admin/option/delete" style="display:inline" onsubmit="return confirm('Delete this option?')">
+                    <input type="hidden" name="id" value="<%= o.id %>" />
+                    <button type="submit" class="btn-sm btn-danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="admin-accordion">
+        <button class="accordion-btn" onclick="toggleSection('addOption')">+ Add New Option</button>
+        <div id="addOption" class="accordion-content">
+          <form method="POST" action="/admin/option/add" class="admin-form">
+            <select name="service_id" required>
+              <option value="">-- Select Service --</option>
+              <% services.forEach(function(s) { %>
+                <option value="<%= s.id %>"><%= s.name %></option>
+              <% }) %>
+            </select>
+            <input type="text" name="name" placeholder="Option Name" required />
+            <input type="text" name="description" placeholder="Description" />
+            <input type="number" name="price" placeholder="Price (TZS)" required />
+            <button type="submit" class="btn">Add Option</button>
+          </form>
+        </div>
+
+        <button class="accordion-btn" onclick="toggleSection('editOption')">- Edit Option</button>
+        <div id="editOption" class="accordion-content" style="display:none">
+          <form method="POST" action="/admin/option/edit" class="admin-form">
+            <input type="hidden" name="id" id="opt-id" />
+            <input type="text" name="name" id="opt-name" placeholder="Option Name" required />
+            <input type="text" name="description" id="opt-desc" placeholder="Description" />
+            <input type="number" name="price" id="opt-price" placeholder="Price (TZS)" required />
+            <button type="submit" class="btn">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 TechHub Company. Developed by <strong>Ernest Sosthenes</strong></p>
+    </div>
+  </footer>
+
+  <script src="/js/script.js"></script>
+  <script>
+    function toggleSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+    function editSvc(btn) {
+      document.getElementById('edit-id').value = btn.dataset.id;
+      document.getElementById('edit-name').value = btn.dataset.name;
+      document.getElementById('edit-desc').value = btn.dataset.desc;
+      document.getElementById('edit-long').value = btn.dataset.long;
+      document.getElementById('edit-price').value = btn.dataset.price;
+      document.getElementById('edit-category').value = btn.dataset.category;
+      var cb = document.getElementById('edit-has-options');
+      if (cb) cb.checked = btn.dataset.hasoptions === '1';
+      document.getElementById('editService').style.display = 'block';
+    }
+    function editOpt(btn) {
+      document.getElementById('opt-id').value = btn.dataset.id;
+      document.getElementById('opt-name').value = btn.dataset.name;
+      document.getElementById('opt-desc').value = btn.dataset.desc;
+      document.getElementById('opt-price').value = btn.dataset.price;
+      document.getElementById('editOption').style.display = 'block';
+    }
+    function closeWelcome() {
+      var el = document.getElementById('welcomeOverlay');
+      if (el) {
+        el.style.transition = 'opacity 0.4s ease';
+        el.style.opacity = '0';
+        setTimeout(function() { el.style.display = 'none'; }, 400);
+      }
+    }
+  </script>
+</body>
+</html>
