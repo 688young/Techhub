@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Services - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/services">Services</a>
+        <a href="/logout">Logout</a>
+        <span class="role-badge role-<%= user.role %>"><%= user.role %></span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <h2>Our Services</h2>
+      <% if (services.length === 0) { %>
+        <div class="empty-state">No services available yet.</div>
+      <% } %>
+      <% var cats = {}; services.forEach(function(s) { if (!cats[s.category]) cats[s.category] = []; cats[s.category].push(s); }); %>
+      <% Object.keys(cats).forEach(function(cat) { %>
+        <h3 style="font-size:1.1rem;font-weight:700;color:var(--accent-1);margin:30px 0 14px;text-transform:capitalize;border-left:4px solid var(--accent-1);padding-left:14px"><%= cat %></h3>
+        <div class="grid">
+          <% cats[cat].forEach(function(s) { %>
+            <div class="dash-card" onclick="location.href='/order/<%= s.id %>'" style="cursor:pointer">
+              <div class="dash-card-top">
+                <strong><%= s.name %></strong>
+                <span class="badge badge-confirmed" style="font-size:0.7rem"><%= formatTZS(s.price) %></span>
+              </div>
+              <div class="dash-card-info"><%= s.description %></div>
+              <% if (s.has_options) { %>
+                <div class="dash-card-info" style="color:var(--accent-1);font-size:0.78rem;margin-top:6px"><i class="fas fa-layer-group"></i> Multiple options available</div>
+              <% } %>
+            </div>
+          <% }); %>
+        </div>
+      <% }); %>
+    </div>
+  </section>
+</body>
+</html>
