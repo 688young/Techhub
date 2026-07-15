@@ -24,23 +24,38 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'sosthenes688@gmail.com',
-    pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '') || 'your-app-password-here'
-  },
-  connectionTimeout: 15000
-});
+var transporter = null;
+function initTransporter() {
+  const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+  if (!pass || pass === 'your-app-password-here') {
+    console.log('[EMAIL] No EMAIL_PASS set — email disabled');
+    return;
+  }
+  transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user: 'sosthenes688@gmail.com', pass },
+    connectionTimeout: 20000,
+    greetingTimeout: 10000
+  });
+  transporter.verify(function(err) {
+    if (err) console.error('[EMAIL] Transport verify failed:', err.message);
+    else console.log('[EMAIL] Transport ready');
+  });
+}
+initTransporter();
 
 function sendEmail(to, subject, html) {
+  if (!transporter) {
+    console.error('[EMAIL] Cannot send — no transporter configured');
+    return Promise.reject(new Error('No EMAIL_PASS configured'));
+  }
   return transporter.sendMail({
     from: '"TechHub Company" <sosthenes688@gmail.com>',
     to, subject, html
   }).then(r => console.log('[EMAIL] Sent to', to, ':', r.messageId))
-    .catch(e => console.error('[EMAIL] Failed to', to, ':', e.message, '-', e.code || ''));
+    .catch(e => console.error('[EMAIL] Failed to', to, ':', e.message, e.code ? '('+e.code+')' : ''));
 }
 
 function formatTZS(n) {
@@ -112,18 +127,20 @@ async function start() {
     const { email } = req.body;
     const user = await get('SELECT id FROM users WHERE email = $1', [email]);
     if (!user) {
-      return res.render('forgot-password', { error: 'Email not found', success: null, token: null });
+      return res.render('forgot-password', { error: 'Email not found', success: null, token: null, resetLink: null });
     }
     const token = crypto.randomBytes(20).toString('hex');
     const expires = new Date(Date.now() + 3600000).toISOString();
     await run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)', [user.id, token, expires]);
     const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-    sendEmail(email, 'Password Reset - TechHub Company',
-      `<h2>Password Reset</h2><p>Click <a href="${siteUrl}/reset-password/${token}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`);
+    const resetLink = `${siteUrl}/reset-password/${token}`;
+    const emailResult = await sendEmail(email, 'Password Reset - TechHub Company',
+      `<h2>Password Reset</h2><p>Click <a href="${resetLink}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`).then(() => true).catch(() => false);
     res.render('forgot-password', {
       error: null,
-      success: 'If that email exists, a reset link has been sent.',
-      token: token
+      success: emailResult ? 'A reset link has been sent to your email.' : 'Email service unavailable. Use the reset link below:',
+      token: token,
+      resetLink: resetLink
     });
   });
 
