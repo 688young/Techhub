@@ -125,6 +125,7 @@
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon">T</div>
@@ -463,7 +464,14 @@
 document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('collapsed');
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebarOverlay');
+  if (window.innerWidth <= 768) {
+    sb.classList.toggle('mobile-open');
+    ov.classList.toggle('show');
+  } else {
+    sb.classList.toggle('collapsed');
+  }
 }
 function toggleTheme() {
   var html = document.documentElement;
