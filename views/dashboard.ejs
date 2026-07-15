@@ -1,523 +1,177 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — TechHub Company</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <title>Dashboard - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="/css/admin.css" />
-  <style>
-  .order-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px;
-    margin-bottom: 12px;
-    transition: all var(--transition);
-  }
-  .order-card:hover { box-shadow: var(--shadow-lg); }
-  .order-card .order-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .order-card .order-top .order-service {
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .order-card .order-meta {
-    font-size: 13px;
-    color: var(--text-secondary);
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-  .order-card .order-meta span { display: flex; align-items: center; gap: 4px; }
-  .order-form-inline {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .order-form-inline input {
-    padding: 7px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 13px;
-    outline: none;
-    min-width: 180px;
-    flex: 1;
-  }
-  .order-form-inline input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
-  .order-form-inline .btn-action {
-    padding: 7px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity var(--transition);
-    color: #fff;
-  }
-  .btn-action.primary { background: var(--primary); }
-  .btn-action.success { background: var(--success); }
-  .btn-action:hover { opacity: 0.85; }
-  .pay-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  .pay-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-  .pay-card h4 {
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    color: var(--primary);
-  }
-  .pay-card p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-  }
-  .pay-card p strong { color: var(--text); }
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-  }
-  .empty-state i { font-size: 36px; display: block; margin-bottom: 12px; }
-  .alert-toast {
-    padding: 12px 20px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
-    font-size: 14px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .alert-toast.success { background: rgba(16,185,129,0.12); color: #047857; border: 1px solid rgba(16,185,129,0.3); }
-  .alert-toast.error { background: rgba(239,68,68,0.12); color: #b91c1c; border: 1px solid rgba(239,68,68,0.3); }
-  [data-theme="dark"] .alert-toast.success { color: #34d399; }
-  [data-theme="dark"] .alert-toast.error { color: #f87171; }
-  @media (max-width: 768px) {
-    .pay-cards { grid-template-columns: 1fr; }
-    .order-form-inline { flex-direction: column; align-items: stretch; }
-    .order-form-inline input { min-width: auto; }
-  }
-  </style>
 </head>
 <body>
-
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div class="brand-icon">T</div>
-    <span class="brand-text">TechHub</span>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-label">Main</div>
-    <button class="nav-item active" onclick="switchSection('dashboardSec')">
-      <span class="nav-icon"><i class="fas fa-th-large"></i></span>
-      <span class="nav-text">Dashboard</span>
-    </button>
-    <button class="nav-item" onclick="location.href='/services'">
-      <span class="nav-icon"><i class="fas fa-concierge-bell"></i></span>
-      <span class="nav-text">Services</span>
-    </button>
-    <div class="nav-label">Orders</div>
-    <button class="nav-item" onclick="switchSection('pendingSec')">
-      <span class="nav-icon"><i class="fas fa-clock"></i></span>
-      <span class="nav-text">Pending</span>
-      <span class="nav-badge"><%= stats.pending %></span>
-    </button>
-    <button class="nav-item" onclick="switchSection('activeSec')">
-      <span class="nav-icon"><i class="fas fa-play-circle"></i></span>
-      <span class="nav-text">Active</span>
-      <span class="nav-badge"><%= stats.confirmed %></span>
-    </button>
-    <button class="nav-item" onclick="switchSection('doneSec')">
-      <span class="nav-icon"><i class="fas fa-check-circle"></i></span>
-      <span class="nav-text">Completed</span>
-      <span class="nav-badge"><%= stats.completed %></span>
-    </button>
-    <div class="nav-label">Account</div>
-    <button class="nav-item" onclick="switchSection('paymentSec')">
-      <span class="nav-icon"><i class="fas fa-credit-card"></i></span>
-      <span class="nav-text">Payment Info</span>
-    </button>
-  </nav>
-  <div class="sidebar-footer">
-    <button class="nav-item" onclick="location.href='/logout'">
-      <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
-      <span class="nav-text">Logout</span>
-    </button>
-  </div>
-</aside>
-
-<header class="topnav" id="topnav">
-  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-    <i class="fas fa-bars"></i>
-  </button>
-  <div style="font-size:14px;font-weight:500;color:var(--text-secondary);flex:1">
-    Welcome back, <strong style="color:var(--text)"><%= user.username %></strong>
-  </div>
-  <div class="topnav-right">
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-      <i class="fas fa-moon" id="themeIcon"></i>
-    </button>
-    <div style="position:relative">
-      <div class="user-avatar" onclick="toggleDropdown()" title="<%= user.username %>">
-        <%= user.username.charAt(0).toUpperCase() %>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div style="padding:10px 12px;font-size:13px;font-weight:600"><%= user.username %></div>
-        <div style="padding:0 12px 8px;font-size:12px;color:var(--text-muted)"><%= user.email %></div>
-        <div class="dropdown-divider"></div>
-        <a href="/services"><i class="fas fa-concierge-bell"></i> Services</a>
-        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
-      </div>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/services">Services</a>
+        <a href="/logout">Logout</a>
+      </nav>
     </div>
-  </div>
-</header>
+  </header>
 
-<div class="breadcrumb">
-  <a href="/dashboard">Dashboard</a> / <span>Home</span>
-</div>
-
-<main class="main" id="mainContent">
-
-<% if (msg) { %>
-  <div class="alert-toast <%= error ? 'error' : 'success' %>">
-    <i class="fas <%= error ? 'fa-exclamation-circle' : 'fa-check-circle' %>"></i> <%= msg %>
-  </div>
-<% } %>
-
-<div id="dashboardSec" class="section-content active">
-  <div class="welcome-section animate-in">
-    <div class="welcome-left">
-      <h1>Good Morning, <span><%= user.username %></span></h1>
-      <p>Welcome back to TechHub. Manage your orders and services here.</p>
-    </div>
-    <div class="welcome-right">
-      <div class="date-display"><i class="far fa-calendar-alt"></i> <span id="currentDate"></span></div>
-    </div>
-  </div>
-
-  <div class="stats-grid animate-in">
-    <div class="stat-card bg-orders" style="animation-delay:0.05s">
-      <div class="stat-top"><div class="stat-icon"><i class="fas fa-shopping-bag"></i></div></div>
-      <div class="stat-label">Total Orders</div>
-      <div class="stat-value" data-count="<%= stats.total %>">0</div>
-      <div class="stat-change up"><i class="fas fa-box"></i> All time</div>
-      <div class="stat-bg"></div>
-    </div>
-    <div class="stat-card bg-pending" style="animation-delay:0.1s">
-      <div class="stat-top"><div class="stat-icon"><i class="fas fa-clock"></i></div></div>
-      <div class="stat-label">Pending</div>
-      <div class="stat-value" data-count="<%= stats.pending %>">0</div>
-      <div class="stat-change down"><i class="fas fa-hourglass"></i> Awaiting action</div>
-      <div class="stat-bg"></div>
-    </div>
-    <div class="stat-card bg-confirmed" style="animation-delay:0.15s">
-      <div class="stat-top"><div class="stat-icon"><i class="fas fa-play-circle"></i></div></div>
-      <div class="stat-label">Active</div>
-      <div class="stat-value" data-count="<%= stats.confirmed %>">0</div>
-      <div class="stat-change up"><i class="fas fa-arrow-up"></i> In progress</div>
-      <div class="stat-bg"></div>
-    </div>
-    <div class="stat-card bg-done" style="animation-delay:0.2s">
-      <div class="stat-top"><div class="stat-icon"><i class="fas fa-check-double"></i></div></div>
-      <div class="stat-label">Completed</div>
-      <div class="stat-value" data-count="<%= stats.completed %>">0</div>
-      <div class="stat-change up"><i class="fas fa-check"></i> Done</div>
-      <div class="stat-bg"></div>
-    </div>
-  </div>
-
-  <div class="quick-actions">
-    <a class="quick-action" href="/services">
-      <div class="qa-icon" style="background:linear-gradient(135deg,var(--primary),#60a5fa)"><i class="fas fa-plus"></i></div>
-      <div class="qa-label">Order Service</div>
-    </a>
-    <a class="quick-action" href="#" onclick="switchSection('pendingSec')">
-      <div class="qa-icon" style="background:linear-gradient(135deg,var(--warning),#fbbf24)"><i class="fas fa-clock"></i></div>
-      <div class="qa-label">Pending</div>
-    </a>
-    <a class="quick-action" href="#" onclick="switchSection('activeSec')">
-      <div class="qa-icon" style="background:linear-gradient(135deg,var(--success),#34d399)"><i class="fas fa-play"></i></div>
-      <div class="qa-label">Active</div>
-    </a>
-    <a class="quick-action" href="#" onclick="switchSection('paymentSec')">
-      <div class="qa-icon" style="background:linear-gradient(135deg,var(--secondary),#a78bfa)"><i class="fas fa-credit-card"></i></div>
-      <div class="qa-label">Payments</div>
-    </a>
-  </div>
-
-  <div class="activity-card">
-    <h3><i class="fas fa-chart-simple" style="color:var(--primary)"></i> Quick Overview</h3>
-    <div class="activity-timeline">
-      <div class="activity-item">
-        <div class="act-time">Orders</div>
-        <div class="act-text">You have <strong><%= stats.total %></strong> total orders</div>
-      </div>
-      <div class="activity-item">
-        <div class="act-time">Pending</div>
-        <div class="act-text"><strong><%= stats.pending %></strong> orders need confirmation</div>
-      </div>
-      <div class="activity-item">
-        <div class="act-time">Active</div>
-        <div class="act-text"><strong><%= stats.confirmed %></strong> orders in progress</div>
-      </div>
-      <div class="activity-item">
-        <div class="act-time">Services</div>
-        <div class="act-text">Browse our <a href="/services" style="color:var(--primary)">services</a> to place a new order</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="pendingSec" class="section-content">
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="fas fa-clock" style="color:var(--warning)"></i> Pending Orders</h2>
-      <span class="section-count"><%= stats.pending %> pending</span>
-    </div>
-    <% if (pendingOrders.length === 0) { %>
-      <div class="empty-state"><i class="fas fa-inbox"></i> No pending orders. <a href="/services" style="color:var(--primary)">Order a service</a></div>
-    <% } %>
-    <% pendingOrders.forEach(function(o) { %>
-      <div class="order-card">
-        <div class="order-top">
-          <span class="order-service">#<%= o.id %> <%= o.service %><%= o.service_option ? ' — '+o.service_option : '' %></span>
-          <span class="status-badge pending"><%= o.is_confirmed === 0 ? 'Awaiting Code' : 'Pending' %></span>
+  <% if (msg) { %><div class="alert <%= error ? 'alert-error' : 'alert-success' %>"><%= msg %></div><% } %>
+  <% if (locals.welcome) { %>
+    <div id="welcomeOverlay" class="welcome-overlay">
+      <div class="welcome-scene">
+        <div class="speech-bubble">YOUR WELCOME, <%= user.username %>!</div>
+        <div class="running-character">
+          <div class="character-body">
+            <div class="head"><div class="face"><div class="eye left"></div><div class="eye right"></div><div class="smile"></div></div></div>
+            <div class="torso"></div>
+            <div class="arm left-arm"></div>
+            <div class="arm right-arm"></div>
+            <div class="leg left-leg"></div>
+            <div class="leg right-leg"></div>
+          </div>
+          <div class="shadow"></div>
         </div>
-        <div class="order-meta">
-          <span><i class="fas fa-tag"></i> <%= formatTZS(o.price) %></span>
-          <span><i class="fas fa-mobile-alt"></i> <%= o.phone || '-' %></span>
-          <span><i class="fas fa-credit-card"></i> <%= o.payment_network || '-' %></span>
-          <span><i class="far fa-calendar"></i> <%= o.created_at %></span>
-        </div>
-        <% if (!o.is_confirmed) { %>
-          <form method="POST" action="/order/confirm" class="order-form-inline">
-            <input type="hidden" name="order_id" value="<%= o.id %>" />
-            <i class="fas fa-key" style="color:var(--text-muted)"></i>
-            <input type="text" name="code" placeholder="Enter confirmation code from email" required maxlength="6" />
-            <button type="submit" class="btn-action primary"><i class="fas fa-check"></i> Confirm</button>
-          </form>
-        <% } %>
       </div>
-    <% }); %>
-  </div>
-</div>
-
-<div id="activeSec" class="section-content">
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="fas fa-play-circle" style="color:var(--success)"></i> Active Orders</h2>
-      <span class="section-count"><%= stats.confirmed %> active</span>
     </div>
-    <% if (activeOrders.length === 0) { %>
-      <div class="empty-state"><i class="fas fa-box-open"></i> No active orders.</div>
-    <% } %>
-    <% activeOrders.forEach(function(o) { %>
-      <% if (o.status === 'quote') { %>
-        <div class="order-card" style="border-color:rgba(124,58,237,0.3)">
-          <div class="order-top">
-            <span class="order-service">#<%= o.id %> <%= o.service %></span>
-            <span class="status-badge quote">Quote Request</span>
+  <% } %>
+
+  <section class="section">
+    <div class="container">
+      <h2>Welcome, <%= user.username %>!</h2>
+      <div class="stats-row">
+        <div class="stat"><strong><%= stats.total %></strong> Total</div>
+        <div class="stat"><strong><%= stats.pending %></strong> Pending</div>
+        <div class="stat"><strong><%= stats.confirmed %></strong> Active</div>
+        <div class="stat"><strong><%= stats.completed %></strong> Done</div>
+      </div>
+
+      <div class="dash-menu">
+        <button class="dash-btn dash-btn-purple" onclick="showSection('pendingSec')"><span class="dash-icon">&#9203;</span> Pending Orders <span class="dash-count"><%= stats.pending %></span></button>
+        <button class="dash-btn dash-btn-blue" onclick="showSection('activeSec')"><span class="dash-icon">&#9889;</span> Active Orders <span class="dash-count"><%= stats.confirmed %></span></button>
+        <button class="dash-btn dash-btn-green" onclick="showSection('doneSec')"><span class="dash-icon">&#10004;</span> Completed <span class="dash-count"><%= stats.completed %></span></button>
+        <button class="dash-btn dash-btn-gold" onclick="showSection('paymentSec')"><span class="dash-icon">&#128179;</span> Payment Info</button>
+        <a href="/services" class="dash-btn dash-btn-cyan"><span class="dash-icon">&#128722;</span> Order Service</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pending Orders -->
+  <section id="pendingSec" class="dash-section">
+    <div class="container">
+      <h3>&#9203; Pending Orders</h3>
+      <% if (pendingOrders.length === 0) { %><p class="empty">No pending orders.</p><% } %>
+      <% pendingOrders.forEach(function(o) { %>
+        <div class="dash-card">
+          <div class="dash-card-top">
+            <strong>#<%= o.id %> <%= o.service %><%= o.service_option ? ' - '+o.service_option : '' %></strong>
+            <span class="badge badge-<%= o.status %>"><%= o.is_confirmed === 0 ? 'Awaiting' : o.status %></span>
           </div>
-          <div class="order-meta">
-            <span><i class="fas fa-phone"></i> <%= o.phone || '-' %></span>
-            <span><i class="fas fa-info-circle"></i> <%= o.service_option || '' %></span>
-            <span><i class="far fa-calendar"></i> <%= o.created_at %></span>
-          </div>
-          <div style="font-size:13px;color:var(--secondary);margin-top:6px"><i class="fas fa-hourglass-half"></i> We will contact you soon. Thank you!</div>
-        </div>
-      <% } else { %>
-        <div class="order-card">
-          <div class="order-top">
-            <span class="order-service">#<%= o.id %> <%= o.service %></span>
-            <span class="status-badge confirmed">Active</span>
-          </div>
-          <div class="order-meta">
-            <span><i class="fas fa-tag"></i> <%= formatTZS(o.price) %></span>
-            <span><i class="fas fa-phone"></i> <%= o.phone || '-' %></span>
-            <span><i class="fas fa-credit-card"></i> <%= o.payment_network || '-' %></span>
-            <span><i class="far fa-calendar"></i> <%= o.created_at %></span>
-          </div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px">
-            <span class="status-badge <%= o.payment_verified ? 'completed' : 'pending' %>" style="font-size:11px">
-              TxID: <%= o.transaction_id || 'Not submitted' %> | Payment: <%= o.payment_verified ? 'Verified' : 'Pending' %>
-            </span>
-          </div>
-          <% if (!o.transaction_id) { %>
-            <form method="POST" action="/order/proof" class="order-form-inline">
+          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+          <% if (!o.is_confirmed) { %>
+            <form method="POST" action="/order/confirm" class="dash-inline-form">
               <input type="hidden" name="order_id" value="<%= o.id %>" />
-              <i class="fas fa-receipt" style="color:var(--text-muted)"></i>
-              <input type="text" name="transaction_id" placeholder="Enter transaction/reference ID" required />
-              <button type="submit" class="btn-action success"><i class="fas fa-paper-plane"></i> Submit Proof</button>
+              <input type="text" name="code" placeholder="Confirmation code" required maxlength="6" class="dash-input" />
+              <button type="submit" class="btn-sm">Confirm</button>
             </form>
           <% } %>
         </div>
-      <% } %>
-    <% }); %>
-  </div>
-</div>
-
-<div id="doneSec" class="section-content">
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="fas fa-check-circle" style="color:var(--success)"></i> Completed Orders</h2>
-      <span class="section-count"><%= stats.completed %> done</span>
+      <% }); %>
     </div>
-    <% if (completedOrders.length === 0) { %>
-      <div class="empty-state"><i class="fas fa-check-double"></i> No completed orders yet.</div>
-    <% } %>
-    <% completedOrders.forEach(function(o) { %>
-      <div class="order-card">
-        <div class="order-top">
-          <span class="order-service">#<%= o.id %> <%= o.service %></span>
-          <span class="status-badge completed">Completed</span>
+  </section>
+
+  <!-- Active Orders -->
+  <section id="activeSec" class="dash-section">
+    <div class="container">
+      <h3>&#9989; Active Orders</h3>
+      <% if (activeOrders.length === 0) { %><p class="empty">No active orders.</p><% } %>
+      <% activeOrders.forEach(function(o) { %>
+        <% if (o.status === 'quote') { %>
+          <div class="dash-card" style="border-color:#a855f7">
+            <div class="dash-card-top">
+              <strong>#<%= o.id %> <%= o.service %></strong>
+              <span class="badge" style="background:rgba(168,85,247,0.12);color:#a855f7">Quote Request</span>
+            </div>
+            <div class="dash-card-info"><%= o.phone || '-' %> | <%= o.service_option || '' %> | <%= o.created_at %></div>
+            <div class="dash-card-info" style="color:#a855f7">We will contact you soon. Thank you!</div>
+          </div>
+        <% } else { %>
+          <div class="dash-card">
+            <div class="dash-card-top">
+              <strong>#<%= o.id %> <%= o.service %></strong>
+              <span class="badge badge-confirmed">Active</span>
+            </div>
+            <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+            <div class="dash-card-info" style="color:#00d4ff">
+              TxID: <%= o.transaction_id || 'Not submitted' %> | Payment: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+            </div>
+            <% if (!o.transaction_id) { %>
+              <form method="POST" action="/order/proof" class="dash-inline-form">
+                <input type="hidden" name="order_id" value="<%= o.id %>" />
+                <input type="text" name="transaction_id" placeholder="Enter transaction/reference ID" required class="dash-input" />
+                <button type="submit" class="btn-sm btn-green">Submit Proof</button>
+              </form>
+            <% } %>
+          </div>
+        <% } %>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- Completed Orders -->
+  <section id="doneSec" class="dash-section">
+    <div class="container">
+      <h3>&#10004; Completed Orders</h3>
+      <% if (completedOrders.length === 0) { %><p class="empty">No completed orders.</p><% } %>
+      <% completedOrders.forEach(function(o) { %>
+        <div class="dash-card">
+          <div class="dash-card-top">
+            <strong>#<%= o.id %> <%= o.service %></strong>
+            <span class="badge badge-completed">Done</span>
+          </div>
+          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.created_at %></div>
         </div>
-        <div class="order-meta">
-          <span><i class="fas fa-tag"></i> <%= formatTZS(o.price) %></span>
-          <span><i class="far fa-calendar"></i> <%= o.created_at %></span>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- Payment Info -->
+  <section id="paymentSec" class="dash-section">
+    <div class="container">
+      <h3>&#128179; Payment Information</h3>
+      <div class="payment-cards">
+        <div class="pay-card">
+          <h4>MIX by YAS (Mobile)</h4>
+          <p>Number: <strong><%= paymentInfo.mobile.number %></strong></p>
+          <p>Name: <strong><%= paymentInfo.mobile.name %></strong></p>
+        </div>
+        <div class="pay-card">
+          <h4>Equity Bank</h4>
+          <p>Account: <strong><%= paymentInfo.bank.account %></strong></p>
+          <p>Name: <strong><%= paymentInfo.bank.name %></strong></p>
         </div>
       </div>
-    <% }); %>
-  </div>
-</div>
-
-<div id="paymentSec" class="section-content">
-  <div class="section-card">
-    <div class="section-header">
-      <h2><i class="fas fa-credit-card" style="color:var(--secondary)"></i> Payment Information</h2>
-      <span class="section-count">How to pay</span>
     </div>
-    <div class="pay-cards">
-      <div class="pay-card">
-        <h4><i class="fas fa-mobile-alt"></i> MIX by YAS (Mobile)</h4>
-        <p>Number: <strong><%= paymentInfo.mobile.number %></strong></p>
-        <p>Name: <strong><%= paymentInfo.mobile.name %></strong></p>
-      </div>
-      <div class="pay-card">
-        <h4><i class="fas fa-university"></i> Equity Bank</h4>
-        <p>Account: <strong><%= paymentInfo.bank.account %></strong></p>
-        <p>Bank: <strong><%= paymentInfo.bank.bank %></strong></p>
-        <p>Name: <strong><%= paymentInfo.bank.name %></strong></p>
-      </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 TechHub Company. Developed by <strong>Ernest Sosthenes</strong></p>
     </div>
-  </div>
-</div>
+  </footer>
 
-<footer>
-  <p>&copy; 2026 TechHub Company &middot; Developed by <strong>Ernest Sosthenes</strong></p>
-</footer>
-
-</main>
-
-<% if (locals.welcome) { %>
-<div id="welcomeOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#2563eb,#7c3aed);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 0.6s ease">
-  <div style="background:#fff;color:#0f172a;padding:16px 28px;border-radius:16px;font-size:20px;font-weight:700;margin-bottom:20px;box-shadow:0 10px 40px rgba(0,0,0,0.2);position:relative">
-    <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:10px solid #fff"></div>
-    WELCOME, <%= user.username %>!
-  </div>
-  <div style="position:relative;width:100px;height:120px;animation:runIn 0.8s ease-out">
-    <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:80px;height:80px;background:#fbbf24;border-radius:50% 50% 40% 40%;">
-      <div style="position:absolute;top:20px;left:15px;width:12px;height:12px;background:#0f172a;border-radius:50%"></div>
-      <div style="position:absolute;top:20px;right:15px;width:12px;height:12px;background:#0f172a;border-radius:50%"></div>
-      <div style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:20px;height:8px;background:#0f172a;border-radius:0 0 10px 10px"></div>
-    </div>
-    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60px;height:8px;background:rgba(0,0,0,0.15);border-radius:50%;animation:pulse 1s infinite"></div>
-  </div>
-  <style>
-    @keyframes runIn { from { transform:translateX(-200px);opacity:0 } to { transform:translateX(0);opacity:1 } }
-    @keyframes pulse { 0%,100% { transform:translateX(-50%) scale(1);opacity:0.15 } 50% { transform:translateX(-50%) scale(1.2);opacity:0.25 } }
-  </style>
   <script>
-    setTimeout(function() {
-      var el = document.getElementById('welcomeOverlay');
-      if (el) { el.style.opacity = '0'; setTimeout(function() { el.style.display = 'none'; }, 600); }
-    }, 3000);
+    var wo = document.getElementById('welcomeOverlay');
+    if (wo) { setTimeout(function() { wo.style.transition = 'opacity 0.6s ease'; wo.style.opacity = '0'; setTimeout(function() { wo.style.display = 'none'; }, 600); }, 3000); }
+
+    function showSection(id) {
+      var sections = document.querySelectorAll('.dash-section');
+      sections.forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
   </script>
-</div>
-<% } %>
-
-<script>
-document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-function toggleSidebar() {
-  var sb = document.getElementById('sidebar');
-  var ov = document.getElementById('sidebarOverlay');
-  if (window.innerWidth <= 768) {
-    sb.classList.toggle('mobile-open');
-    ov.classList.toggle('show');
-  } else {
-    sb.classList.toggle('collapsed');
-  }
-}
-function toggleTheme() {
-  var html = document.documentElement;
-  var isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  document.getElementById('themeIcon').className = isDark ? 'fas fa-moon' : 'fas fa-sun';
-  localStorage.setItem('theme', isDark ? 'light' : 'dark');
-}
-(function() {
-  var saved = localStorage.getItem('theme');
-  if (saved === 'dark') { document.documentElement.setAttribute('data-theme','dark'); document.getElementById('themeIcon').className = 'fas fa-sun'; }
-})();
-
-function toggleDropdown() {
-  document.getElementById('userDropdown').classList.toggle('show');
-}
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.user-avatar') && !e.target.closest('.user-dropdown')) { var d = document.getElementById('userDropdown'); if (d) d.classList.remove('show'); }
-});
-
-function switchSection(id) {
-  document.querySelectorAll('.section-content').forEach(function(s) { s.style.display = 'none'; });
-  document.getElementById(id).style.display = 'block';
-  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-  event && event.target && event.target.closest('.nav-item') && event.target.closest('.nav-item').classList.add('active');
-}
-
-function animateCounters() {
-  document.querySelectorAll('.stat-value[data-count]').forEach(function(el) {
-    var target = parseInt(el.dataset.count);
-    var current = 0;
-    var step = Math.max(1, Math.floor(target / 30));
-    var interval = setInterval(function() {
-      current += step;
-      if (current >= target) { current = target; clearInterval(interval); }
-      el.textContent = current;
-    }, 40);
-  });
-}
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(e) {
-    if (e.isIntersecting) { animateCounters(); observer.disconnect(); }
-  });
-}, { threshold: 0.1 });
-var ds = document.getElementById('dashboardSec');
-if (ds) observer.observe(ds);
-</script>
 </body>
 </html>
