@@ -23,6 +23,7 @@
         <div style="font-size:4rem;margin-bottom:10px">&#9989;</div>
         <h2>Request Sent Successfully!</h2>
         <p style="font-size:1.1rem;margin:16px 0"><strong><%= service %></strong></p>
+        <% if (pkg && pkg !== '') { %><p>Package: <strong><%= pkg %></strong></p><% } %>
         <% if (location) { %><p>Location: <%= location %></p><% } %>
         <% if (quantity) { %><p>Quantity: <%= quantity %></p><% } %>
         <hr />
