@@ -89,23 +89,34 @@
       <h3>&#9989; Active Orders</h3>
       <% if (activeOrders.length === 0) { %><p class="empty">No active orders.</p><% } %>
       <% activeOrders.forEach(function(o) { %>
-        <div class="dash-card">
-          <div class="dash-card-top">
-            <strong>#<%= o.id %> <%= o.service %></strong>
-            <span class="badge badge-confirmed">Active</span>
+        <% if (o.status === 'quote') { %>
+          <div class="dash-card" style="border-color:#a855f7">
+            <div class="dash-card-top">
+              <strong>#<%= o.id %> <%= o.service %></strong>
+              <span class="badge" style="background:rgba(168,85,247,0.12);color:#a855f7">Quote Request</span>
+            </div>
+            <div class="dash-card-info"><%= o.phone || '-' %> | <%= o.service_option || '' %> | <%= o.created_at %></div>
+            <div class="dash-card-info" style="color:#a855f7">We will contact you soon. Thank you!</div>
           </div>
-          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
-          <div class="dash-card-info" style="color:#00d4ff">
-            TxID: <%= o.transaction_id || 'Not submitted' %> | Payment: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+        <% } else { %>
+          <div class="dash-card">
+            <div class="dash-card-top">
+              <strong>#<%= o.id %> <%= o.service %></strong>
+              <span class="badge badge-confirmed">Active</span>
+            </div>
+            <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+            <div class="dash-card-info" style="color:#00d4ff">
+              TxID: <%= o.transaction_id || 'Not submitted' %> | Payment: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+            </div>
+            <% if (!o.transaction_id) { %>
+              <form method="POST" action="/order/proof" class="dash-inline-form">
+                <input type="hidden" name="order_id" value="<%= o.id %>" />
+                <input type="text" name="transaction_id" placeholder="Enter transaction/reference ID" required class="dash-input" />
+                <button type="submit" class="btn-sm btn-green">Submit Proof</button>
+              </form>
+            <% } %>
           </div>
-          <% if (!o.transaction_id) { %>
-            <form method="POST" action="/order/proof" class="dash-inline-form">
-              <input type="hidden" name="order_id" value="<%= o.id %>" />
-              <input type="text" name="transaction_id" placeholder="Enter transaction/reference ID" required class="dash-input" />
-              <button type="submit" class="btn-sm btn-green">Submit Proof</button>
-            </form>
-          <% } %>
-        </div>
+        <% } %>
       <% }); %>
     </div>
   </section>
