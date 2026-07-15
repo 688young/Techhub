@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: techhub
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: AT_USERNAME
+        sync: false
+      - key: AT_API_KEY
+        sync: false
+      - key: AT_FROM
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
