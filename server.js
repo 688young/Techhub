@@ -120,7 +120,7 @@ async function start() {
   });
 
   app.get('/forgot-password', (req, res) => {
-    res.render('forgot-password', { error: null, success: null, token: null });
+    res.render('forgot-password', { error: null, success: null, token: null, resetLink: null });
   });
 
   app.post('/forgot-password', async (req, res) => {
@@ -134,11 +134,11 @@ async function start() {
     await run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)', [user.id, token, expires]);
     const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
     const resetLink = `${siteUrl}/reset-password/${token}`;
-    const emailResult = await sendEmail(email, 'Password Reset - TechHub Company',
-      `<h2>Password Reset</h2><p>Click <a href="${resetLink}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`).then(() => true).catch(() => false);
+    sendEmail(email, 'Password Reset - TechHub Company',
+      `<h2>Password Reset</h2><p>Click <a href="${resetLink}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`);
     res.render('forgot-password', {
       error: null,
-      success: emailResult ? 'A reset link has been sent to your email.' : 'Email service unavailable. Use the reset link below:',
+      success: 'Reset link generated. Check your email or use the link below:',
       token: token,
       resetLink: resetLink
     });
