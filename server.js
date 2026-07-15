@@ -49,6 +49,35 @@ async function start() {
   const { initDB, get, all, run } = await require('./database/db');
   await initDB();
 
+  const adminExists = get('SELECT id FROM users WHERE role = ?', ['admin']);
+  if (!adminExists) {
+    const hash = bcrypt.hashSync('admin123', 10);
+    run('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+      ['Admin', 'admin@techhub.com', hash, 'admin']);
+    console.log('Admin created: admin@techhub.com / admin123');
+  }
+
+  const svc = get('SELECT id FROM services LIMIT 1');
+  if (!svc) {
+    const sampleServices = [
+      { name: 'Web Design', cat: 'design', desc: 'Professional website design', price: 150000 },
+      { name: 'Network Installation', cat: 'networking', desc: 'Complete network setup & configuration', price: 200000 },
+      { name: 'CCTV Installation', cat: 'security', desc: 'CCTV camera installation & setup', price: 250000, opts: true },
+    ];
+    for (const s of sampleServices) {
+      run('INSERT INTO services (name, category, description, price, has_options) VALUES (?, ?, ?, ?, ?)',
+        [s.name, s.cat, s.desc, s.price, s.opts ? 1 : 0]);
+      if (s.opts) {
+        const sid = get('SELECT id FROM services ORDER BY id DESC LIMIT 1').id;
+        run('INSERT INTO service_options (service_id, name, description, price) VALUES (?, ?, ?, ?)',
+          [sid, 'Basic Package', '4 cameras + DVR', 250000]);
+        run('INSERT INTO service_options (service_id, name, description, price) VALUES (?, ?, ?, ?)',
+          [sid, 'Premium Package', '8 cameras + NVR', 450000]);
+      }
+    }
+    console.log('Sample services created');
+  }
+
   app.get('/', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     res.redirect('/dashboard');
