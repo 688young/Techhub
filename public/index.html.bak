@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechHub Company - IT Services</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="#home">Home</a>
+        <a href="#services">Services</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a href="/login">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <section id="home" class="hero">
+    <div class="container">
+      <h2>Your Trusted IT Partner</h2>
+      <p>End-to-end IT solutions for businesses of all sizes.</p>
+      <a href="#services" class="btn">Explore Services</a>
+    </div>
+  </section>
+
+  <section id="services" class="section">
+    <div class="container">
+      <h2>Our Services</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Network Setup & Security</h3>
+          <p>Secure, scalable network infrastructure and cybersecurity solutions.</p>
+        </div>
+        <div class="card">
+          <h3>Cloud Solutions</h3>
+          <p>Cloud migration, hosting, and management (AWS, Azure, GCP).</p>
+        </div>
+        <div class="card">
+          <h3>Software Development</h3>
+          <p>Custom web, mobile, and desktop applications tailored to your needs.</p>
+        </div>
+        <div class="card">
+          <h3>IT Support & Maintenance</h3>
+          <p>24/7 help desk, system monitoring, and proactive maintenance.</p>
+        </div>
+        <div class="card">
+          <h3>Data Backup & Recovery</h3>
+          <p>Automated backups, disaster recovery planning, and data restoration.</p>
+        </div>
+        <div class="card">
+          <h3>Consulting & Strategy</h3>
+          <p>Technology roadmap, digital transformation, and IT strategy consulting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="section bg-light">
+    <div class="container">
+      <h2>About Us</h2>
+      <p>We are a team of experienced IT professionals dedicated to delivering reliable, innovative, and cost-effective technology solutions. From startups to enterprises, we help organizations leverage technology to achieve their goals.</p>
+    </div>
+  </section>
+
+  <section id="contact" class="section">
+    <div class="container">
+      <h2>Contact Us</h2>
+      <form id="contactForm">
+        <input type="text" placeholder="Your Name" required />
+        <input type="email" placeholder="Your Email" required />
+        <textarea placeholder="Your Message" rows="5" required></textarea>
+        <button type="submit" class="btn">Send Message</button>
+      </form>
+      <p id="formMsg"></p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 TechHub Company. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/js/script.js"></script>
+</body>
+</html>
