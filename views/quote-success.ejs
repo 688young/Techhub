@@ -20,8 +20,11 @@
   <section class="section">
     <div class="container">
       <div class="confirm-box" style="text-align:center">
-        <div style="font-size:4rem;margin-bottom:10px">&#9989;</div>
-        <h2>Request Sent Successfully!</h2>
+        <div style="font-size:4rem;margin-bottom:10px">&#128221;</div>
+        <h2>Request Submitted — Awaiting Response</h2>
+        <div style="background:#fff3cd;color:#664d03;border:1px solid #ffc107;border-radius:8px;padding:12px;margin:12px 0;font-size:0.9rem;text-align:left">
+          &#9888; Your request has been received but is <strong>not yet approved</strong>. Our team will review it and contact you with a quotation and next steps.
+        </div>
         <p style="font-size:1.1rem;margin:16px 0"><strong><%= service %></strong></p>
         <% if (pkg && pkg !== '') { %><p>Package: <strong><%= pkg %></strong></p><% } %>
         <% if (location) { %><p>Location: <%= location %></p><% } %>
