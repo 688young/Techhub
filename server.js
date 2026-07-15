@@ -163,15 +163,17 @@ async function start() {
   });
 
   app.post('/order/quote', isAuth, (req, res) => {
-    const { service_id, name, phone, location, quantity, description } = req.body;
+    const { service_id, name, phone, selected_option, location, quantity, description } = req.body;
     const service = get('SELECT * FROM services WHERE id = ? AND is_active = 1', [service_id]);
     if (!service) return res.redirect('/services');
-    const details = `Location: ${location || 'N/A'} | Qty: ${quantity || 'N/A'} | Desc: ${description || 'N/A'}`;
+    let optInfo = '';
+    if (selected_option) optInfo = `Package: ${selected_option} | `;
+    const details = `${optInfo}Location: ${location || 'N/A'} | Qty: ${quantity || 'N/A'} | Desc: ${description || 'N/A'}`;
     run('INSERT INTO orders (user_id, customer_name, customer_email, service, price, phone, status, service_option, is_confirmed) VALUES (?, ?, ?, ?, 0, ?, ?, ?, 1)',
       [req.session.user.id, name || req.session.user.username, req.session.user.email, service.name, phone, 'quote', details]);
     sendEmail('sosthenes688@gmail.com', `Service Request: ${service.name} from ${name}`,
-      `<h2>New Service Request</h2><p><strong>Service:</strong> ${service.name}</p><p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p><p><strong>Location:</strong> ${location || 'Not specified'}</p><p><strong>Quantity:</strong> ${quantity || 'Not specified'}</p><p><strong>Description:</strong> ${description || 'Not specified'}</p><hr><p>Login to admin to view all requests.</p>`);
-    res.redirect(`/order/quote-success?service=${encodeURIComponent(service.name)}&location=${encodeURIComponent(location||'')}&quantity=${encodeURIComponent(quantity||'')}&desc=${encodeURIComponent(description||'')}`);
+      `<h2>New Service Request</h2><p><strong>Service:</strong> ${service.name}</p><p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p>${selected_option ? `<p><strong>Package:</strong> ${selected_option}</p>` : ''}<p><strong>Location:</strong> ${location || 'Not specified'}</p><p><strong>Quantity:</strong> ${quantity || 'Not specified'}</p><p><strong>Description:</strong> ${description || 'Not specified'}</p><hr><p>Login to admin to view all requests.</p>`);
+    res.redirect(`/order/quote-success?service=${encodeURIComponent(service.name)}&pkg=${encodeURIComponent(selected_option||'')}&location=${encodeURIComponent(location||'')}&quantity=${encodeURIComponent(quantity||'')}&desc=${encodeURIComponent(description||'')}`);
   });
 
   app.get('/order/quote-success', isAuth, (req, res) => {
