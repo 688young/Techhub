@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goodbye - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="welcomeOverlay" class="welcome-overlay">
+    <div class="welcome-scene">
+        <div class="speech-bubble">GOODBYE, <%= username %>!</div>
+      <div class="running-character">
+        <div class="character-body">
+          <div class="head"><div class="face"><div class="eye left"></div><div class="eye right"></div><div class="smile"></div></div></div>
+          <div class="torso"></div>
+          <div class="arm left-arm"></div>
+          <div class="arm right-arm"></div>
+          <div class="leg left-leg"></div>
+          <div class="leg right-leg"></div>
+        </div>
+        <div class="shadow"></div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-container" style="padding-top:260px">
+    <div class="auth-box">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <h2 class="fade-in">Goodbye, <%= username %>!</h2>
+      <p class="slide-up">See you later!</p>
+      <a href="/login" class="btn pulse-btn">Login Again</a>
+      <a href="/" class="btn" style="background:#444">Home</a>
+    </div>
+  </div>
+  <script>
+    setTimeout(function() {
+      window.location.href = '/login';
+    }, 4000);
+  </script>
+</body>
+</html>
