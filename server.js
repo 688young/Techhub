@@ -27,9 +27,17 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'sosthenes688@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your-app-password-here'
+    pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '') || 'your-app-password-here'
   }
 });
+
+function sendEmail(to, subject, html) {
+  return transporter.sendMail({
+    from: '"TechHub Company" <sosthenes688@gmail.com>',
+    to, subject, html
+  }).then(r => console.log('[EMAIL] Sent to', to, ':', r.messageId))
+    .catch(e => console.error('[EMAIL] Failed to', to, ':', e.message));
+}
 
 function formatTZS(n) {
   return 'TZS ' + Number(n).toLocaleString();
@@ -134,12 +142,9 @@ async function start() {
     const token = crypto.randomBytes(20).toString('hex');
     const expires = new Date(Date.now() + 3600000).toISOString();
     run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)', [user.id, token, expires]);
-    transporter.sendMail({
-      from: '"TechHub Company" <sosthenes688@gmail.com>',
-      to: email,
-      subject: 'Password Reset - TechHub Company',
-      html: `<h2>Password Reset</h2><p>Click <a href="http://localhost:3000/reset-password/${token}">here</a> to reset your password.</p><p>Or copy this token: <strong>${token}</strong></p><p>Token expires in 1 hour.</p>`
-    }).catch(() => {});
+    const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+    sendEmail(email, 'Password Reset - TechHub Company',
+      `<h2>Password Reset</h2><p>Click <a href="${siteUrl}/reset-password/${token}">here</a> to reset your password.</p><p>Token: <strong>${token}</strong></p><p>Expires in 1 hour.</p>`);
     res.render('forgot-password', {
       error: null,
       success: 'If that email exists, a reset link has been sent.',
@@ -203,19 +208,15 @@ async function start() {
 
     const order = get('SELECT id FROM orders WHERE user_id = ? AND confirmation_code = ? ORDER BY id DESC LIMIT 1', [user.id, code]);
 
-    transporter.sendMail({
-      from: '"TechHub Company" <sosthenes688@gmail.com>',
-      to: user.email,
-      subject: 'Order Confirmation Code - TechHub Company',
-      html: `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p><hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`
-    }).catch(() => {});
+    sendEmail(user.email, `Order Confirmation Code - ${formatTZS(finalPrice)}`,
+      `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p><hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`);
 
     transporter.sendMail({
       from: '"TechHub" <sosthenes688@gmail.com>',
       to: 'sosthenes688@gmail.com',
       subject: `New Order: ${service.name} from ${user.username}`,
       text: `Customer: ${user.username} (${user.email})\nService: ${service.name}${optionName ? ' - ' + optionName : ''}\nPrice: ${formatTZS(finalPrice)}\nPhone: ${phone}\nPayment: ${payment_network}\nConfirmation Code: ${code}`
-    }).catch(() => {});
+    }).catch(err => console.error('[EMAIL] Admin notify:', err.message));
 
     sendSMS(phone, `TechHub: Order received for ${service.name}${optionName ? ' - '+optionName : ''}. Amount: ${formatTZS(finalPrice)}. Use code: ${code} to confirm. Pay via MIX(YAS) 45490505 or Equity 3015111947559. After payment, enter Transaction ID on the website.`);
 
@@ -290,7 +291,7 @@ async function start() {
       to: 'sosthenes688@gmail.com',
       subject: `New Contact Message from ${name}`,
       html: `<h2>New Contact Message</h2><p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Message:</strong></p><p>${message}</p>`
-    }).catch(() => {});
+    }).catch(err => console.error('[EMAIL] Contact:', err.message));
     res.json({ success: true, message: 'Thank you! We will get back to you shortly.' });
   });
 
