@@ -725,19 +725,102 @@ body {
   font-size: 12px;
 }
 
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  z-index: 99;
+}
+.sidebar-overlay.show { display: block; }
+
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .welcome-section .welcome-left h1 { font-size: 22px; }
+}
+
 @media (max-width: 768px) {
-  .sidebar { width: var(--sidebar-w-collapsed); }
-  .sidebar .brand-text, .sidebar .nav-label, .sidebar .nav-item .nav-text, .sidebar .nav-item .nav-badge { opacity: 0; width: 0; overflow: hidden; }
-  .topnav { left: var(--sidebar-w-collapsed); }
-  .main { margin-left: var(--sidebar-w-collapsed); padding: 16px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .sidebar { width: 0; overflow: hidden; border: none; transition: width var(--transition); }
+  .sidebar.mobile-open { width: var(--sidebar-w); box-shadow: var(--shadow-lg); }
+  .sidebar.mobile-open .brand-text,
+  .sidebar.mobile-open .nav-label,
+  .sidebar.mobile-open .nav-item .nav-text,
+  .sidebar.mobile-open .nav-item .nav-badge { opacity: 1; width: auto; overflow: visible; }
+  .topnav { left: 0; padding: 0 12px; gap: 8px; }
+  .main { margin-left: 0; padding: 12px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .charts-row { grid-template-columns: 1fr; }
-  .welcome-section { flex-direction: column; }
+  .welcome-section { flex-direction: column; gap: 12px; }
+  .welcome-section .welcome-left h1 { font-size: 20px; }
+  .welcome-section .welcome-left p { font-size: 13px; }
+  .welcome-section .welcome-right .date-display { font-size: 12px; padding: 6px 12px; }
   .admin-form-modern { grid-template-columns: 1fr; }
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
-  .sidebar.expanded-responsive { width: var(--sidebar-w); z-index: 200; box-shadow: var(--shadow-lg); }
-  .sidebar.expanded-responsive .brand-text, .sidebar.expanded-responsive .nav-label,
-  .sidebar.expanded-responsive .nav-item .nav-text, .sidebar.expanded-responsive .nav-item .nav-badge { opacity: 1; width: auto; overflow: visible; }
+  .quick-actions { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .quick-action { padding: 12px 8px; }
+  .quick-action .qa-label { font-size: 12px; }
+  .stat-card { padding: 14px; }
+  .stat-card .stat-value { font-size: 22px; }
+  .stat-card .stat-label { font-size: 11px; }
+  .breadcrumb { padding: 0 16px; font-size: 12px; margin-top: calc(var(--topnav-h) + 8px); }
+  .section-card { padding: 14px; }
+  .section-card .section-header h2 { font-size: 15px; }
+  .table-wrap-modern { font-size: 12px; }
+  .table-wrap-modern th { font-size: 10px; padding: 8px 8px; }
+  .table-wrap-modern td { font-size: 12px; padding: 8px 8px; white-space: normal; word-break: break-word; }
+  .chart-card { padding: 14px; }
+  .chart-card .chart-header h3 { font-size: 13px; }
+  .chart-card canvas { max-height: 180px; }
+  .activity-card { padding: 14px; }
+  .activity-card h3 { font-size: 13px; }
+  .activity-item .act-text { font-size: 12px; }
+  .tab-btn { font-size: 12px; padding: 6px 12px; }
+  .admin-form-modern input, .admin-form-modern select, .admin-form-modern textarea { font-size: 12px; padding: 8px; }
+  .form-inline-group select { font-size: 11px; padding: 4px 6px; }
+  .topnav .search-box { max-width: 160px; }
+  .topnav .search-box input { font-size: 12px; padding: 6px 10px 6px 30px; }
+  .order-card { padding: 14px; }
+  .order-card .order-top .order-service { font-size: 14px; }
+  .order-card .order-meta { font-size: 12px; gap: 8px; }
+  .order-form-inline input { font-size: 12px; min-width: 120px; }
+  .pay-cards { grid-template-columns: 1fr; }
+  .pay-card { padding: 14px; }
+  .pay-card h4 { font-size: 13px; }
+  .pay-card p { font-size: 12px; }
+  .admin-form-modern .btn-submit, .btn-action { padding: 8px 14px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .quick-actions { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .welcome-section .welcome-left h1 { font-size: 17px; }
+  .welcome-section .welcome-right .date-display { font-size: 11px; padding: 4px 10px; }
+  .welcome-section .welcome-right .admin-badge { font-size: 11px; padding: 5px 12px; }
+  .stat-card { padding: 12px; }
+  .stat-card .stat-value { font-size: 20px; }
+  .stat-card .stat-icon { width: 32px; height: 32px; font-size: 14px; }
+  .topnav .search-box { max-width: 120px; }
+  .topnav .search-box input { padding: 5px 8px 5px 26px; font-size: 11px; }
+  .section-card { padding: 12px; }
+  .table-wrap-modern th { font-size: 9px; padding: 6px 6px; }
+  .table-wrap-modern td { font-size: 11px; padding: 6px 6px; }
+  .order-card { padding: 12px; }
+  .order-card .order-top .order-service { font-size: 13px; }
+  .order-card .order-meta { font-size: 11px; gap: 6px; }
+  .order-form-inline { flex-direction: column; align-items: stretch; }
+  .order-form-inline input { min-width: auto; width: 100%; }
+  .breadcrumb { padding: 0 12px; font-size: 11px; }
+  .quick-action .qa-icon { width: 30px; height: 30px; font-size: 14px; }
+  .quick-action .qa-label { font-size: 11px; }
+  .topnav { padding: 0 8px; }
+  .topnav .topnav-right { gap: 4px; }
+  .topnav .theme-toggle, .topnav .notif-btn { font-size: 15px; padding: 6px; }
+  .topnav .user-avatar { width: 28px; height: 28px; font-size: 11px; }
+  .sidebar.mobile-open { width: 260px; }
+  .sidebar.mobile-open .brand-text,
+  .sidebar.mobile-open .nav-label,
+  .sidebar.mobile-open .nav-item .nav-text,
+  .sidebar.mobile-open .nav-item .nav-badge { opacity: 1; width: auto; overflow: visible; }
 }
 
 .loader-skeleton {
