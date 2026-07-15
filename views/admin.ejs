@@ -1,100 +1,288 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Panel - TechHub Company</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <title>Admin Dashboard — TechHub Company</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="/css/admin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1 class="logo">ADMIN PANEL</h1>
-      <nav>
-        <a href="/admin">Dashboard</a>
-        <a href="/logout">Logout (<%= user.username %>)</a>
-      </nav>
-    </div>
-  </header>
 
-  <% if (locals.welcome) { %>
-    <div id="welcomeOverlay" class="welcome-overlay">
-      <div class="welcome-box">
-        <div class="welcome-icon">&#10003;</div>
-        <h1>Hello, Admin!</h1>
-        <p>You are welcome!</p>
-        <button onclick="closeWelcome()" class="btn">Continue</button>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">T</div>
+    <span class="brand-text">TechHub Admin</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <button class="nav-item active" onclick="switchTab('dashboard-tab', this)">
+      <span class="nav-icon"><i class="fas fa-th-large"></i></span>
+      <span class="nav-text">Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('users-tab', this)">
+      <span class="nav-icon"><i class="fas fa-users"></i></span>
+      <span class="nav-text">Users</span>
+      <span class="nav-badge"><%= stats.total_users %></span>
+    </button>
+    <button class="nav-item" onclick="switchTab('orders-tab', this)">
+      <span class="nav-icon"><i class="fas fa-shopping-cart"></i></span>
+      <span class="nav-text">Orders</span>
+      <span class="nav-badge"><%= stats.total_orders %></span>
+    </button>
+    <button class="nav-item" onclick="switchTab('messages-tab', this)">
+      <span class="nav-icon"><i class="fas fa-envelope"></i></span>
+      <span class="nav-text">Messages</span>
+      <span class="nav-badge"><%= stats.total_messages %></span>
+    </button>
+    <div class="nav-label">Management</div>
+    <button class="nav-item" onclick="switchTab('services-tab', this)">
+      <span class="nav-icon"><i class="fas fa-cogs"></i></span>
+      <span class="nav-text">Services</span>
+      <span class="nav-badge"><%= stats.total_services %></span>
+    </button>
+    <button class="nav-item" onclick="switchTab('options-tab', this)">
+      <span class="nav-icon"><i class="fas fa-list"></i></span>
+      <span class="nav-text">Options</span>
+      <span class="nav-badge"><%= options.length %></span>
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="nav-item" onclick="location.href='/logout'">
+      <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span>
+      <span class="nav-text">Logout</span>
+    </button>
+  </div>
+</aside>
+
+<header class="topnav" id="topnav">
+  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+    <i class="fas fa-bars"></i>
+  </button>
+  <div class="search-box">
+    <span class="search-icon"><i class="fas fa-search"></i></span>
+    <input type="text" id="globalSearch" placeholder="Search users, orders, services..." oninput="filterTables(this.value)" />
+  </div>
+  <div class="topnav-right">
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <i class="fas fa-moon" id="themeIcon"></i>
+    </button>
+    <button class="notif-btn" onclick="switchTab('messages-tab', document.querySelector('[onclick*=\\'messages\\'')])" aria-label="Notifications">
+      <i class="fas fa-bell"></i>
+      <% if (stats.total_messages > 0) { %><span class="notif-dot"></span><% } %>
+    </button>
+    <div style="position:relative">
+      <div class="user-avatar" onclick="toggleDropdown()" title="<%= user.username %>">
+        <%= user.username.charAt(0).toUpperCase() %>
+      </div>
+      <div class="user-dropdown" id="userDropdown">
+        <div style="padding:10px 12px;font-size:13px;font-weight:600"><%= user.username %></div>
+        <div style="padding:0 12px 8px;font-size:12px;color:var(--text-muted)"><%= user.email %></div>
+        <div class="dropdown-divider"></div>
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
       </div>
     </div>
-  <% } %>
+  </div>
+</header>
 
-  <section class="section">
-    <div class="container">
-      <h2>Dashboard Overview</h2>
-      <div class="admin-stats">
-        <div class="stat-box stat-users pulse-in">Users: <%= stats.total_users %></div>
-        <div class="stat-box stat-orders pulse-in">Orders: <%= stats.total_orders %></div>
-        <div class="stat-box stat-pending pulse-in">Pending: <%= stats.pending_orders %></div>
-        <div class="stat-box stat-messages pulse-in">Messages: <%= stats.total_messages %></div>
-        <div class="stat-box stat-services pulse-in">Services: <%= stats.total_services %></div>
+<div class="breadcrumb">
+  <a href="/admin">Admin</a> / <span>Dashboard</span>
+</div>
+
+<main class="main" id="mainContent">
+
+<div class="tab-content active" id="dashboard-tab">
+  <div class="welcome-section animate-in">
+    <div class="welcome-left">
+      <h1>Good Morning, <span><%= user.username %></span></h1>
+      <p>Welcome back to TechHub Admin. Here's what's happening today.</p>
+    </div>
+    <div class="welcome-right">
+      <div class="date-display"><i class="far fa-calendar-alt"></i> <span id="currentDate"></span></div>
+      <div class="admin-badge"><i class="fas fa-crown"></i> Admin</div>
+    </div>
+  </div>
+
+  <div class="stats-grid animate-in">
+    <div class="stat-card bg-users" style="animation-delay:0.05s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-users"></i></div></div>
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value" data-count="<%= stats.total_users %>">0</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> Registered</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-orders" style="animation-delay:0.1s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-shopping-cart"></i></div></div>
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-value" data-count="<%= stats.total_orders %>">0</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> All time</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-pending" style="animation-delay:0.15s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-clock"></i></div></div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" data-count="<%= stats.pending_orders %>">0</div>
+      <div class="stat-change <%= stats.pending_orders > 0 ? 'down' : 'up' %>"><i class="fas fa-<%= stats.pending_orders > 0 ? 'arrow-down' : 'check' %>"></i> Need attention</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-confirmed" style="animation-delay:0.2s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-check-circle"></i></div></div>
+      <div class="stat-label">Confirmed</div>
+      <div class="stat-value" data-count="<%= stats.confirmed_orders %>">0</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> Active</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-done" style="animation-delay:0.25s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-check-double"></i></div></div>
+      <div class="stat-label">Completed</div>
+      <div class="stat-value" data-count="<%= stats.completed_orders %>">0</div>
+      <div class="stat-change up"><i class="fas fa-check"></i> Done</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-messages" style="animation-delay:0.3s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-envelope"></i></div></div>
+      <div class="stat-label">Messages</div>
+      <div class="stat-value" data-count="<%= stats.total_messages %>">0</div>
+      <div class="stat-change"><i class="far fa-envelope"></i> Inbox</div>
+      <div class="stat-bg"></div>
+    </div>
+    <div class="stat-card bg-services" style="animation-delay:0.35s">
+      <div class="stat-top"><div class="stat-icon"><i class="fas fa-cogs"></i></div></div>
+      <div class="stat-label">Services</div>
+      <div class="stat-value" data-count="<%= stats.total_services %>">0</div>
+      <div class="stat-change up"><i class="fas fa-cog"></i> Active</div>
+      <div class="stat-bg"></div>
+    </div>
+  </div>
+
+  <div class="charts-row animate-in">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="fas fa-chart-area" style="color:var(--primary)"></i> Orders Overview</h3>
+        <span class="chart-period">Last 30 days</span>
+      </div>
+      <canvas id="ordersChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3><i class="fas fa-chart-pie" style="color:var(--secondary)"></i> Distribution</h3>
+        <span class="chart-period">Status</span>
+      </div>
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <a class="quick-action" href="#users-tab" onclick="switchTab('users-tab', document.querySelectorAll('.nav-item')[1])">
+      <div class="qa-icon" style="background:linear-gradient(135deg,var(--primary),#60a5fa)"><i class="fas fa-user-plus"></i></div>
+      <div class="qa-label">Users</div>
+    </a>
+    <a class="quick-action" href="#orders-tab" onclick="switchTab('orders-tab', document.querySelectorAll('.nav-item')[2])">
+      <div class="qa-icon" style="background:linear-gradient(135deg,var(--secondary),#a78bfa)"><i class="fas fa-shopping-bag"></i></div>
+      <div class="qa-label">Orders</div>
+    </a>
+    <a class="quick-action" href="#messages-tab" onclick="switchTab('messages-tab', document.querySelectorAll('.nav-item')[3])">
+      <div class="qa-icon" style="background:linear-gradient(135deg,#06b6d4,#22d3ee)"><i class="fas fa-comments"></i></div>
+      <div class="qa-label">Messages</div>
+    </a>
+    <a class="quick-action" href="#services-tab" onclick="switchTab('services-tab', document.querySelectorAll('.nav-item')[4])">
+      <div class="qa-icon" style="background:linear-gradient(135deg,var(--success),#34d399)"><i class="fas fa-plus-circle"></i></div>
+      <div class="qa-label">Add Service</div>
+    </a>
+  </div>
+
+  <div class="activity-card">
+    <h3><i class="fas fa-history" style="color:var(--primary)"></i> Recent Activity</h3>
+    <div class="activity-timeline">
+      <div class="activity-item">
+        <div class="act-time">Just now</div>
+        <div class="act-text"><strong><%= stats.total_orders %></strong> total orders in the system</div>
+      </div>
+      <div class="activity-item">
+        <div class="act-time">Today</div>
+        <div class="act-text"><strong><%= stats.pending_orders %></strong> pending orders need attention</div>
+      </div>
+      <div class="activity-item">
+        <div class="act-time">Today</div>
+        <div class="act-text"><strong><%= stats.total_users %></strong> registered users</div>
+      </div>
+      <div class="activity-item">
+        <div class="act-time">Today</div>
+        <div class="act-text"><strong><%= stats.total_messages %></strong> messages from customers</div>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section class="section bg-light" id="admin-users">
-    <div class="container">
-      <h2>All Users (<%= users.length %>)</h2>
-      <div class="table-wrap">
+<div class="tab-content" id="users-tab">
+  <div class="section-card section-id">
+    <div class="section-header">
+      <h2><i class="fas fa-users" style="color:var(--primary)"></i> All Users</h2>
+      <span class="section-count"><%= users.length %> total</span>
+    </div>
+    <div class="table-wrap-modern" id="usersTable">
+      <table>
+        <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Registered</th><th>Action</th></tr></thead>
+        <tbody>
+          <% users.forEach(function(u) { %>
+            <tr class="table-row">
+              <td><%= u.id %></td>
+              <td><strong><%= u.username %></strong></td>
+              <td><%= u.email %></td>
+              <td><span class="status-badge <%= u.role === 'admin' ? 'confirmed' : 'pending' %>"><%= u.role %></span></td>
+              <td style="color:var(--text-muted)"><%= u.created_at %></td>
+              <td>
+                <% if (u.role !== 'admin') { %>
+                  <form method="POST" action="/admin/user/delete" style="display:inline" onsubmit="return confirm('Delete user <%= u.username %> and all their orders?')">
+                    <input type="hidden" name="id" value="<%= u.id %>" />
+                    <button type="submit" class="btn-icon danger"><i class="fas fa-trash"></i></button>
+                  </form>
+                <% } else { %>
+                  <span style="color:var(--text-muted)">—</span>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="orders-tab">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchOrderTab('pending-orders', this)">Pending</button>
+    <button class="tab-btn" onclick="switchOrderTab('all-orders', this)">All Orders</button>
+  </div>
+
+  <div class="order-tab-content active" id="pending-orders">
+    <div class="section-card">
+      <div class="section-header">
+        <h2><i class="fas fa-clock" style="color:var(--warning)"></i> Pending Orders</h2>
+        <span class="section-count"><%= orders.filter(function(o){return o.status === 'pending' || o.is_confirmed === 0}).length %> pending</span>
+      </div>
+      <div class="table-wrap-modern">
         <table>
-          <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Registered</th><th>Action</th></tr></thead>
-          <tbody>
-            <% users.forEach(function(u) { %>
-              <tr>
-                <td><%= u.id %></td>
-                <td><%= u.username %></td>
-                <td><%= u.email %></td>
-                <td><%= u.role %></td>
-                <td><%= u.created_at %></td>
-                <td>
-                  <% if (u.role !== 'admin') { %>
-                    <form method="POST" action="/admin/user/delete" style="display:inline" onsubmit="return confirm('Delete user <%= u.username %> and all their orders?')">
-                      <input type="hidden" name="id" value="<%= u.id %>" />
-                      <button type="submit" class="btn-sm btn-danger">Delete</button>
-                    </form>
-                  <% } else { %>
-                    -
-                  <% } %>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="section bg-light" id="admin-pending">
-    <div class="container">
-      <h2>Pending Orders</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirmed</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirm</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
             <% orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).forEach(function(o) { %>
-              <tr class="<%= o.is_confirmed === 0 ? 'unread' : '' %>">
+              <tr class="table-row" style="<%= o.is_confirmed === 0 ? 'background:rgba(245,158,11,0.04)' : '' %>">
                 <td><%= o.id %></td>
-                <td><%= o.customer_name %></td>
-                <td><%= o.customer_email %></td>
+                <td><strong><%= o.customer_name %></strong></td>
+                <td style="color:var(--text-muted)"><%= o.customer_email %></td>
                 <td><%= o.service %></td>
                 <td><%= formatTZS(o.price) %></td>
                 <td><%= o.phone || '-' %></td>
                 <td><%= o.payment_network || '-' %></td>
-                <td><%= o.confirmation_code || '-' %></td>
-                <td><%= o.is_confirmed ? 'Yes' : 'No' %></td>
-                <td><span class="status-<%= o.status %>"><%= o.status %></span></td>
-                <td><%= o.created_at %></td>
+                <td style="font-family:monospace"><%= o.confirmation_code || '-' %></td>
+                <td><%= o.is_confirmed ? '<span class="status-badge completed">Yes</span>' : '<span class="status-badge pending">No</span>' %></td>
+                <td><span class="status-badge <%= o.status %>"><%= o.status %></span></td>
+                <td style="color:var(--text-muted)"><%= o.created_at %></td>
                 <td>
-                  <form method="POST" action="/admin/order/status" style="display:inline-flex;gap:4px;flex-wrap:wrap">
+                  <form method="POST" action="/admin/order/status" class="form-inline-group">
                     <input type="hidden" name="id" value="<%= o.id %>" />
                     <select name="status">
                       <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>Pending</option>
@@ -102,62 +290,65 @@
                       <option value="completed" <%= o.status === 'completed' ? 'selected' : '' %>>Complete</option>
                       <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>Cancel</option>
                     </select>
-                    <button type="submit" class="btn-sm">Go</button>
+                    <button type="submit" class="btn-icon success"><i class="fas fa-check"></i></button>
                   </form>
                 </td>
               </tr>
             <% }) %>
             <% if (orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).length === 0) { %>
-              <tr><td colspan="12" style="text-align:center;color:#999">No pending orders</td></tr>
+              <tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:30px"><i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px"></i>No pending orders</td></tr>
             <% } %>
           </tbody>
         </table>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="section" id="admin-orders">
-    <div class="container">
-      <h2>All Orders (<%= orders.length %>)</h2>
-      <div class="table-wrap">
+  <div class="order-tab-content" id="all-orders" style="display:none">
+    <div class="section-card">
+      <div class="section-header">
+        <h2><i class="fas fa-shopping-cart" style="color:var(--primary)"></i> All Orders</h2>
+        <span class="section-count"><%= orders.length %> total</span>
+      </div>
+      <div class="table-wrap-modern">
         <table>
           <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Details</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
             <% orders.forEach(function(o) { %>
-              <tr class="<%= o.status === 'quote' ? 'row-quote' : '' %>">
+              <tr class="table-row" style="<%= o.status === 'quote' ? 'background:rgba(124,58,237,0.04)' : '' %>">
                 <td><%= o.id %></td>
-                <td><%= o.customer_name %></td>
-                <td><%= o.customer_email %></td>
-                <td><%= o.service %><%= o.service_option ? ' ('+o.service_option+')' : '' %></td>
-                <td><%= o.status === 'quote' ? 'Quote' : formatTZS(o.price) %></td>
+                <td><strong><%= o.customer_name %></strong></td>
+                <td style="color:var(--text-muted)"><%= o.customer_email %></td>
+                <td><%= o.service %><%= o.service_option ? '<br><span style="font-size:11px;color:var(--text-muted)">'+o.service_option+'</span>' : '' %></td>
+                <td><%= o.status === 'quote' ? '<span class="status-badge quote">Quote</span>' : formatTZS(o.price) %></td>
                 <td><%= o.phone || '-' %></td>
                 <td>
                   <% if (o.status === 'quote') { %>
-                    <span style="font-size:0.78rem;color:var(--accent-1)"><%= o.service_option || 'Quote request' %></span>
+                    <span style="font-size:12px;color:var(--secondary)"><%= o.service_option || 'Quote request' %></span>
                   <% } else { %>
-                    <span style="font-size:0.78rem;color:var(--text-muted)">
+                    <span style="font-size:12px;color:var(--text-muted)">
                       Tx: <%= o.transaction_id || '-' %>
                       <% if (o.transaction_id) { %>
-                        | Pay: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+                        <br><span style="font-size:11px">Pay: <%= o.payment_verified ? '<span class="status-badge completed">Verified</span>' : '<span class="status-badge pending">Pending</span>' %></span>
                         <% if (!o.payment_verified) { %>
                           <form method="POST" action="/admin/payment/verify" style="display:inline">
                             <input type="hidden" name="id" value="<%= o.id %>" />
-                            <button type="submit" class="btn-sm" style="background:#27ae60;color:#fff">Verify</button>
+                            <button type="submit" class="btn-icon success" title="Verify payment"><i class="fas fa-check-circle"></i></button>
                           </form>
                         <% } else { %>
                           <form method="POST" action="/admin/payment/unverify" style="display:inline">
                             <input type="hidden" name="id" value="<%= o.id %>" />
-                            <button type="submit" class="btn-sm btn-danger">Unverify</button>
+                            <button type="submit" class="btn-icon danger" title="Unverify"><i class="fas fa-undo"></i></button>
                           </form>
                         <% } %>
                       <% } %>
                     </span>
                   <% } %>
                 </td>
-                <td><span class="status-<%= o.status %>"><%= o.status === 'quote' ? 'Quote Request' : o.status %></span></td>
-                <td><%= o.created_at %></td>
+                <td><span class="status-badge <%= o.status %>"><%= o.status === 'quote' ? 'Quote Request' : o.status %></span></td>
+                <td style="color:var(--text-muted)"><%= o.created_at %></td>
                 <td>
-                  <form method="POST" action="/admin/order/status" style="display:inline-flex;gap:4px;flex-wrap:wrap">
+                  <form method="POST" action="/admin/order/status" class="form-inline-group">
                     <input type="hidden" name="id" value="<%= o.id %>" />
                     <select name="status">
                       <option value="quote" <%= o.status === 'quote' ? 'selected' : '' %>>Quote</option>
@@ -166,7 +357,7 @@
                       <option value="completed" <%= o.status === 'completed' ? 'selected' : '' %>>Completed</option>
                       <option value="cancelled" <%= o.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
                     </select>
-                    <button type="submit" class="btn-sm">Go</button>
+                    <button type="submit" class="btn-icon success"><i class="fas fa-check"></i></button>
                   </form>
                 </td>
               </tr>
@@ -175,230 +366,390 @@
         </table>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section class="section bg-light" id="admin-messages">
-    <div class="container">
-      <h2>Messages (<%= messages.length %>)</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Message</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody>
-            <% messages.forEach(function(m) { %>
-              <tr class="<%= !m.is_read ? 'unread' : '' %>">
-                <td><%= m.id %></td>
-                <td><%= m.name %></td>
-                <td><%= m.email %></td>
-                <td><%= m.message.length > 60 ? m.message.substring(0,60)+'...' : m.message %></td>
-                <td><%= m.created_at %></td>
-                <td>
-                  <form method="POST" action="/admin/message/read" style="display:inline">
-                    <input type="hidden" name="id" value="<%= m.id %>" />
-                    <button type="submit" class="btn-sm"><%= !m.is_read ? 'Mark Read' : 'Read' %></button>
-                  </form>
-                  <form method="POST" action="/admin/message/delete" style="display:inline" onsubmit="return confirm('Delete message?')">
-                    <input type="hidden" name="id" value="<%= m.id %>" />
-                    <button type="submit" class="btn-sm btn-danger">Delete</button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+<div class="tab-content" id="messages-tab">
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="fas fa-envelope" style="color:#06b6d4"></i> Messages</h2>
+      <span class="section-count"><%= messages.length %> total</span>
     </div>
-  </section>
-
-  <section class="section" id="admin-services">
-    <div class="container">
-      <h2>Manage Services (<%= services.length %>)</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Options</th><th>Active</th><th>Actions</th></tr></thead>
-          <tbody>
-            <% services.forEach(function(s) { %>
-              <tr>
-                <td><%= s.id %></td>
-                <td><%= s.name %></td>
-                <td><%= s.category %></td>
-                <td><%= formatTZS(s.price) %></td>
-                <td><%= s.has_options ? 'Yes' : 'No' %></td>
-                <td><%= s.is_active ? 'Yes' : 'No' %></td>
-                <td>
-                  <button class="btn-sm" onclick="editSvc(this)" data-id="<%= s.id %>" data-name="<%- s.name %>" data-desc="<%- s.description || '' %>" data-long="<%- s.long_description || '' %>" data-price="<%= s.price %>" data-category="<%- s.category %>" data-hasoptions="<%= s.has_options || 0 %>">Edit</button>
-                  <form method="POST" action="/admin/service/toggle" style="display:inline">
-                    <input type="hidden" name="id" value="<%= s.id %>" />
-                    <button type="submit" class="btn-sm"><%= s.is_active ? 'Disable' : 'Enable' %></button>
-                  </form>
-                  <form method="POST" action="/admin/service/delete" style="display:inline" onsubmit="return confirm('Delete service and all its options?')">
-                    <input type="hidden" name="id" value="<%= s.id %>" />
-                    <button type="submit" class="btn-sm btn-danger">Delete</button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="admin-accordion">
-        <button class="accordion-btn" onclick="toggleSection('addService')">+ Add New Service</button>
-        <div id="addService" class="accordion-content">
-          <form method="POST" action="/admin/service/add" class="admin-form">
-            <input type="text" name="name" placeholder="Service Name" required />
-            <input type="text" name="description" placeholder="Short Description" />
-            <textarea name="long_description" placeholder="Long Description"></textarea>
-            <input type="number" name="price" placeholder="Price (TZS)" required />
-            <select name="category">
-              <option value="general">General</option>
-              <option value="networking">Networking</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="security">Security</option>
-              <option value="design">Design</option>
-              <option value="marketing">Marketing</option>
-              <option value="cloud">Cloud</option>
-              <option value="development">Development</option>
-              <option value="support">Support</option>
-              <option value="consulting">Consulting</option>
-            </select>
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
-              <input type="checkbox" name="has_options" /> Has options (e.g. camera types)
-            </label>
-            <button type="submit" class="btn">Add Service</button>
-          </form>
-        </div>
-
-        <button class="accordion-btn" onclick="toggleSection('editService')">- Edit Service</button>
-        <div id="editService" class="accordion-content" style="display:none">
-          <form method="POST" action="/admin/service/edit" class="admin-form">
-            <input type="hidden" name="id" id="edit-id" />
-            <input type="text" name="name" id="edit-name" placeholder="Service Name" required />
-            <input type="text" name="description" id="edit-desc" placeholder="Short Description" />
-            <textarea name="long_description" id="edit-long" placeholder="Long Description"></textarea>
-            <input type="number" name="price" id="edit-price" placeholder="Price (TZS)" required />
-            <select name="category" id="edit-category">
-              <option value="general">General</option>
-              <option value="networking">Networking</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="security">Security</option>
-              <option value="design">Design</option>
-              <option value="marketing">Marketing</option>
-              <option value="cloud">Cloud</option>
-              <option value="development">Development</option>
-              <option value="support">Support</option>
-              <option value="consulting">Consulting</option>
-            </select>
-            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer">
-              <input type="checkbox" name="has_options" id="edit-has-options" /> Has options
-            </label>
-            <button type="submit" class="btn">Save Changes</button>
-          </form>
-        </div>
-      </div>
+    <div class="table-wrap-modern">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Message</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% messages.forEach(function(m) { %>
+            <tr class="table-row" style="<%= !m.is_read ? 'font-weight:600' : '' %>">
+              <td><%= m.id %></td>
+              <td><%= m.name %></td>
+              <td style="color:var(--text-muted)"><%= m.email %></td>
+              <td><%= m.message.length > 60 ? m.message.substring(0,60)+'...' : m.message %></td>
+              <td style="color:var(--text-muted)"><%= m.created_at %></td>
+              <td>
+                <form method="POST" action="/admin/message/read" style="display:inline">
+                  <input type="hidden" name="id" value="<%= m.id %>" />
+                  <button type="submit" class="btn-icon <%= !m.is_read ? 'warning' : '' %>"><i class="fas <%= !m.is_read ? 'fa-envelope-open' : 'fa-envelope' %>"></i></button>
+                </form>
+                <form method="POST" action="/admin/message/delete" style="display:inline" onsubmit="return confirm('Delete message?')">
+                  <input type="hidden" name="id" value="<%= m.id %>" />
+                  <button type="submit" class="btn-icon danger"><i class="fas fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section class="section bg-light" id="admin-options">
-    <div class="container">
-      <h2>Service Options (<%= options.length %>)</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>ID</th><th>Service</th><th>Name</th><th>Description</th><th>Price</th><th>Active</th><th>Actions</th></tr></thead>
-          <tbody>
-            <% options.forEach(function(o) { %>
-              <tr>
-                <td><%= o.id %></td>
-                <td><%= o.service_name %></td>
-                <td><%= o.name %></td>
-                <td><%= o.description %></td>
-                <td><%= formatTZS(o.price) %></td>
-                <td><%= o.is_active ? 'Yes' : 'No' %></td>
-                <td>
-                  <button class="btn-sm" onclick="editOpt(this)" data-id="<%= o.id %>" data-name="<%- o.name %>" data-desc="<%- o.description || '' %>" data-price="<%= o.price %>">Edit</button>
-                  <form method="POST" action="/admin/option/toggle" style="display:inline">
-                    <input type="hidden" name="id" value="<%= o.id %>" />
-                    <button type="submit" class="btn-sm"><%= o.is_active ? 'Disable' : 'Enable' %></button>
-                  </form>
-                  <form method="POST" action="/admin/option/delete" style="display:inline" onsubmit="return confirm('Delete this option?')">
-                    <input type="hidden" name="id" value="<%= o.id %>" />
-                    <button type="submit" class="btn-sm btn-danger">Delete</button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="admin-accordion">
-        <button class="accordion-btn" onclick="toggleSection('addOption')">+ Add New Option</button>
-        <div id="addOption" class="accordion-content">
-          <form method="POST" action="/admin/option/add" class="admin-form">
-            <select name="service_id" required>
-              <option value="">-- Select Service --</option>
-              <% services.forEach(function(s) { %>
-                <option value="<%= s.id %>"><%= s.name %></option>
-              <% }) %>
-            </select>
-            <input type="text" name="name" placeholder="Option Name" required />
-            <input type="text" name="description" placeholder="Description" />
-            <input type="number" name="price" placeholder="Price (TZS)" required />
-            <button type="submit" class="btn">Add Option</button>
-          </form>
-        </div>
-
-        <button class="accordion-btn" onclick="toggleSection('editOption')">- Edit Option</button>
-        <div id="editOption" class="accordion-content" style="display:none">
-          <form method="POST" action="/admin/option/edit" class="admin-form">
-            <input type="hidden" name="id" id="opt-id" />
-            <input type="text" name="name" id="opt-name" placeholder="Option Name" required />
-            <input type="text" name="description" id="opt-desc" placeholder="Description" />
-            <input type="number" name="price" id="opt-price" placeholder="Price (TZS)" required />
-            <button type="submit" class="btn">Save Changes</button>
-          </form>
-        </div>
-      </div>
+<div class="tab-content" id="services-tab">
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="fas fa-cogs" style="color:var(--success)"></i> Manage Services</h2>
+      <span class="section-count"><%= services.length %> services</span>
     </div>
-  </section>
-
-  <footer>
-    <div class="container">
-      <p>&copy; 2026 TechHub Company. Developed by <strong>Ernest Sosthenes</strong></p>
+    <div class="table-wrap-modern">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Options</th><th>Active</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% services.forEach(function(s) { %>
+            <tr class="table-row">
+              <td><%= s.id %></td>
+              <td><strong><%= s.name %></strong></td>
+              <td><span class="status-badge pending"><%= s.category %></span></td>
+              <td><%= formatTZS(s.price) %></td>
+              <td><%= s.has_options ? '<span class="status-badge completed">Yes</span>' : '<span class="status-badge pending">No</span>' %></td>
+              <td><%= s.is_active ? '<span class="status-badge completed">Active</span>' : '<span class="status-badge cancelled">Inactive</span>' %></td>
+              <td>
+                <form method="POST" action="/admin/service/toggle" style="display:inline">
+                  <input type="hidden" name="id" value="<%= s.id %>" />
+                  <button type="submit" class="btn-icon <%= s.is_active ? 'warning' : 'success' %>"><i class="fas <%= s.is_active ? 'fa-eye-slash' : 'fa-eye' %>"></i></button>
+                </form>
+                <button class="btn-icon" onclick="editSvc(this)" data-id="<%= s.id %>" data-name="<%- s.name %>" data-desc="<%- s.description || '' %>" data-long="<%- s.long_description || '' %>" data-price="<%= s.price %>" data-category="<%- s.category %>" data-hasoptions="<%= s.has_options || 0 %>" data-needsquote="<%= s.needs_quote || 0 %>"><i class="fas fa-edit"></i></button>
+                <form method="POST" action="/admin/service/delete" style="display:inline" onsubmit="return confirm('Delete service and all its options?')">
+                  <input type="hidden" name="id" value="<%= s.id %>" />
+                  <button type="submit" class="btn-icon danger"><i class="fas fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
-  </footer>
 
-  <script src="/js/script.js"></script>
-  <script>
-    function toggleSection(id) {
-      const el = document.getElementById(id);
-      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-    }
-    function editSvc(btn) {
-      document.getElementById('edit-id').value = btn.dataset.id;
-      document.getElementById('edit-name').value = btn.dataset.name;
-      document.getElementById('edit-desc').value = btn.dataset.desc;
-      document.getElementById('edit-long').value = btn.dataset.long;
-      document.getElementById('edit-price').value = btn.dataset.price;
-      document.getElementById('edit-category').value = btn.dataset.category;
-      var cb = document.getElementById('edit-has-options');
-      if (cb) cb.checked = btn.dataset.hasoptions === '1';
-      document.getElementById('editService').style.display = 'block';
-    }
-    function editOpt(btn) {
-      document.getElementById('opt-id').value = btn.dataset.id;
-      document.getElementById('opt-name').value = btn.dataset.name;
-      document.getElementById('opt-desc').value = btn.dataset.desc;
-      document.getElementById('opt-price').value = btn.dataset.price;
-      document.getElementById('editOption').style.display = 'block';
-    }
-    function closeWelcome() {
-      var el = document.getElementById('welcomeOverlay');
-      if (el) {
-        el.style.transition = 'opacity 0.4s ease';
-        el.style.opacity = '0';
-        setTimeout(function() { el.style.display = 'none'; }, 400);
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-icon" onclick="toggleAccordion('addServiceForm')" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer"><i class="fas fa-plus"></i> Add Service</button>
+      <button class="btn-icon" onclick="toggleAccordion('editServiceForm')" style="padding:8px 16px;background:var(--secondary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer"><i class="fas fa-pen"></i> Edit Service</button>
+    </div>
+
+    <div id="addServiceForm" style="display:none;margin-top:12px">
+      <form method="POST" action="/admin/service/add" class="admin-form-modern">
+        <div class="form-label"><i class="fas fa-tag"></i> Service Name</div>
+        <input type="text" name="name" placeholder="e.g. Web Development" required />
+        <div class="form-label"><i class="fas fa-align-left"></i> Short Description</div>
+        <input type="text" name="description" placeholder="Brief description" />
+        <div class="form-label full-width"><i class="fas fa-align-justify"></i> Long Description</div>
+        <textarea name="long_description" placeholder="Detailed description to attract customers" class="full-width"></textarea>
+        <div class="form-label">Price (TZS)</div>
+        <input type="number" name="price" placeholder="0 if quote-based" required />
+        <div class="form-label">Category</div>
+        <select name="category">
+          <option value="general">General</option>
+          <option value="networking">Networking</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="security">Security</option>
+          <option value="design">Design</option>
+          <option value="marketing">Marketing</option>
+          <option value="cloud">Cloud</option>
+          <option value="development">Development</option>
+          <option value="support">Support</option>
+          <option value="consulting">Consulting</option>
+        </select>
+        <div class="form-toggle"><input type="checkbox" name="has_options" /> Has options (packages)</div>
+        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Add Service</button>
+      </form>
+    </div>
+
+    <div id="editServiceForm" style="display:none;margin-top:12px">
+      <form method="POST" action="/admin/service/edit" class="admin-form-modern">
+        <input type="hidden" name="id" id="edit-id" />
+        <div class="form-label"><i class="fas fa-tag"></i> Service Name</div>
+        <input type="text" name="name" id="edit-name" placeholder="Service Name" required />
+        <div class="form-label"><i class="fas fa-align-left"></i> Short Description</div>
+        <input type="text" name="description" id="edit-desc" placeholder="Short description" />
+        <div class="form-label full-width"><i class="fas fa-align-justify"></i> Long Description</div>
+        <textarea name="long_description" id="edit-long" placeholder="Long description" class="full-width"></textarea>
+        <div class="form-label">Price (TZS)</div>
+        <input type="number" name="price" id="edit-price" placeholder="Price" required />
+        <div class="form-label">Category</div>
+        <select name="category" id="edit-category">
+          <option value="general">General</option>
+          <option value="networking">Networking</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="security">Security</option>
+          <option value="design">Design</option>
+          <option value="marketing">Marketing</option>
+          <option value="cloud">Cloud</option>
+          <option value="development">Development</option>
+          <option value="support">Support</option>
+          <option value="consulting">Consulting</option>
+        </select>
+        <div class="form-toggle"><input type="checkbox" name="has_options" id="edit-has-options" /> Has options</div>
+        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" id="options-tab">
+  <div class="section-card">
+    <div class="section-header">
+      <h2><i class="fas fa-list" style="color:var(--secondary)"></i> Service Options</h2>
+      <span class="section-count"><%= options.length %} total</span>
+    </div>
+    <div class="table-wrap-modern">
+      <table>
+        <thead><tr><th>ID</th><th>Service</th><th>Name</th><th>Description</th><th>Price</th><th>Active</th><th>Actions</th></tr></thead>
+        <tbody>
+          <% options.forEach(function(o) { %>
+            <tr class="table-row">
+              <td><%= o.id %></td>
+              <td><span class="status-badge pending"><%= optsBySvc && optsBySvc[o.service_id] ? 'ID:'+o.service_id : '-' %></span></td>
+              <td><strong><%= o.name %></strong></td>
+              <td style="color:var(--text-muted)"><%= o.description %></td>
+              <td><%= formatTZS(o.price) %></td>
+              <td><%= o.is_active ? '<span class="status-badge completed">Active</span>' : '<span class="status-badge cancelled">Inactive</span>' %></td>
+              <td>
+                <form method="POST" action="/admin/option/toggle" style="display:inline">
+                  <input type="hidden" name="id" value="<%= o.id %>" />
+                  <button type="submit" class="btn-icon <%= o.is_active ? 'warning' : 'success' %>"><i class="fas <%= o.is_active ? 'fa-eye-slash' : 'fa-eye' %>"></i></button>
+                </form>
+                <button class="btn-icon" onclick="editOpt(this)" data-id="<%= o.id %>" data-name="<%- o.name %>" data-desc="<%- o.description || '' %>" data-price="<%= o.price %>"><i class="fas fa-edit"></i></button>
+                <form method="POST" action="/admin/option/delete" style="display:inline" onsubmit="return confirm('Delete this option?')">
+                  <input type="hidden" name="id" value="<%= o.id %>" />
+                  <button type="submit" class="btn-icon danger"><i class="fas fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-icon" onclick="toggleAccordion('addOptionForm')" style="padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer"><i class="fas fa-plus"></i> Add Option</button>
+      <button class="btn-icon" onclick="toggleAccordion('editOptionForm')" style="padding:8px 16px;background:var(--secondary);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer"><i class="fas fa-pen"></i> Edit Option</button>
+    </div>
+
+    <div id="addOptionForm" style="display:none;margin-top:12px">
+      <form method="POST" action="/admin/option/add" class="admin-form-modern">
+        <div class="form-label"><i class="fas fa-cog"></i> Service</div>
+        <select name="service_id" required>
+          <option value="">-- Select Service --</option>
+          <% services.forEach(function(s) { %>
+            <option value="<%= s.id %>"><%= s.name %></option>
+          <% }) %>
+        </select>
+        <div class="form-label">Option Name</div>
+        <input type="text" name="name" placeholder="e.g. Logo Design" required />
+        <div class="form-label">Description</div>
+        <input type="text" name="description" placeholder="Brief description" />
+        <div class="form-label">Price (TZS)</div>
+        <input type="number" name="price" placeholder="0 if negotiable" required />
+        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Add Option</button>
+      </form>
+    </div>
+
+    <div id="editOptionForm" style="display:none;margin-top:12px">
+      <form method="POST" action="/admin/option/edit" class="admin-form-modern">
+        <input type="hidden" name="id" id="opt-id" />
+        <div class="form-label">Option Name</div>
+        <input type="text" name="name" id="opt-name" placeholder="Option Name" required />
+        <div class="form-label">Description</div>
+        <input type="text" name="description" id="opt-desc" placeholder="Description" />
+        <div class="form-label">Price (TZS)</div>
+        <input type="number" name="price" id="opt-price" placeholder="Price" required />
+        <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Save Changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2026 TechHub Company &middot; Developed by <strong>Ernest Sosthenes</strong></p>
+</footer>
+
+</main>
+
+<script>
+var pendingCount = <%= stats.pending_orders %>;
+var confirmedCount = <%= stats.confirmed_orders %>;
+var completedCount = <%= stats.completed_orders %>;
+var totalOrders = <%= stats.total_orders %>;
+
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+function toggleTheme() {
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeIcon').className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeIcon').className = 'fas fa-sun';
+  }
+})();
+
+function toggleDropdown() {
+  document.getElementById('userDropdown').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.user-avatar') && !e.target.closest('.user-dropdown')) {
+    var d = document.getElementById('userDropdown');
+    if (d) d.classList.remove('show');
+  }
+});
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById(tabId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+}
+
+function switchOrderTab(tabId, btn) {
+  document.querySelectorAll('.order-tab-content').forEach(function(t) { t.style.display = 'none'; });
+  document.getElementById(tabId).style.display = 'block';
+  document.querySelectorAll('#orders-tab .tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+}
+
+function toggleAccordion(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function editSvc(btn) {
+  document.getElementById('edit-id').value = btn.dataset.id;
+  document.getElementById('edit-name').value = btn.dataset.name;
+  document.getElementById('edit-desc').value = btn.dataset.desc;
+  document.getElementById('edit-long').value = btn.dataset.long;
+  document.getElementById('edit-price').value = btn.dataset.price;
+  document.getElementById('edit-category').value = btn.dataset.category;
+  var cb = document.getElementById('edit-has-options');
+  if (cb) cb.checked = btn.dataset.hasoptions === '1';
+  document.getElementById('editServiceForm').style.display = 'block';
+}
+function editOpt(btn) {
+  document.getElementById('opt-id').value = btn.dataset.id;
+  document.getElementById('opt-name').value = btn.dataset.name;
+  document.getElementById('opt-desc').value = btn.dataset.desc;
+  document.getElementById('opt-price').value = btn.dataset.price;
+  document.getElementById('editOptionForm').style.display = 'block';
+}
+
+function filterTables(val) {
+  var q = val.toLowerCase();
+  document.querySelectorAll('.table-row').forEach(function(row) {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function animateCounters() {
+  document.querySelectorAll('.stat-value[data-count]').forEach(function(el) {
+    var target = parseInt(el.dataset.count);
+    var current = 0;
+    var step = Math.max(1, Math.floor(target / 30));
+    var interval = setInterval(function() {
+      current += step;
+      if (current >= target) { current = target; clearInterval(interval); }
+      el.textContent = current;
+    }, 40);
+  });
+}
+
+var chartsInited = false;
+function initCharts() {
+  if (chartsInited) return;
+  chartsInited = true;
+  var ctx1 = document.getElementById('ordersChart');
+  if (ctx1) {
+    new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: ['Pending', 'Confirmed', 'Completed'],
+        datasets: [{
+          label: 'Orders',
+          data: [pendingCount, confirmedCount, completedCount],
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#2563eb',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { grid: { display: false } }
+        }
       }
+    });
+  }
+  var ctx2 = document.getElementById('statusChart');
+  if (ctx2) {
+    new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Pending', 'Confirmed', 'Completed'],
+        datasets: [{
+          data: [pendingCount, confirmedCount, completedCount],
+          backgroundColor: ['#f59e0b', '#2563eb', '#10b981'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11 } } }
+        },
+        cutout: '60%'
+      }
+    });
+  }
+}
+
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      animateCounters();
+      initCharts();
+      observer.disconnect();
     }
-  </script>
+  });
+}, { threshold: 0.1 });
+var dashboardTab = document.getElementById('dashboard-tab');
+if (dashboardTab) observer.observe(dashboardTab);
+
+if (window.location.hash === '#users-tab') {
+  switchTab('users-tab', document.querySelectorAll('.nav-item')[1]);
+}
+</script>
 </body>
 </html>
