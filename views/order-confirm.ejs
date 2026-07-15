@@ -20,13 +20,19 @@
 
   <section class="section">
     <div class="container">
-      <h2>Order Placed Successfully!</h2>
+      <h2>Order Submitted — Pending Payment</h2>
       <div class="confirm-box">
         <p><strong>Service:</strong> <%= service.name %><%= optionName ? ' - ' + optionName : '' %></p>
         <p><strong>Total:</strong> <%= formatTZS(finalPrice) %></p>
         <p><strong>Phone:</strong> <%= phone %></p>
         <p><strong>Payment:</strong> <%= payment_network %></p>
         <p><strong>Confirmation Code sent to:</strong> <%= emailSent %></p>
+        <div style="background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3);border-radius:8px;padding:14px;margin:12px 0;font-size:1.1rem;text-align:center;letter-spacing:4px;font-weight:700">
+          Your Code: <span style="font-size:1.6rem"><%= code %></span>
+        </div>
+        <div style="background:#fff3cd;color:#664d03;border:1px solid #ffc107;border-radius:8px;padding:12px;margin:12px 0;font-size:0.9rem">
+          &#9888; Your order is <strong>not yet confirmed</strong>. Make payment and enter the code above to confirm.
+        </div>
         <hr />
         <h3>Payment Instructions</h3>
         <p><strong>MIX by YAS:</strong> <%= paymentInfo.mobile.number %> - <%= paymentInfo.mobile.name %></p>
