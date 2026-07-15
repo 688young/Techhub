@@ -24,11 +24,14 @@ app.use(session({
 }));
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: 'sosthenes688@gmail.com',
     pass: (process.env.EMAIL_PASS || '').replace(/\s+/g, '') || 'your-app-password-here'
-  }
+  },
+  connectionTimeout: 15000
 });
 
 function sendEmail(to, subject, html) {
