@@ -17,3 +17,5 @@ services:
         sync: false
       - key: EMAIL_PASS
         sync: false
+      - key: SITE_URL
+        sync: false
