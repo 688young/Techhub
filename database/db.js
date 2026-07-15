@@ -158,8 +158,8 @@ async function initDB() {
        'Grow your online presence with professional social media management...', 300000, 'marketing', 0],
       ['Social Media Boosting', 'Increase followers, likes, comments, and views on social media.',
        'Get real engagement on your social media accounts...', 10000, 'marketing', 0],
-      ['Cloud Solutions', 'Cloud migration, hosting, virtual machines, storage.',
-       'Move your business to the cloud with confidence...', 0, 'cloud', 1],
+      ['Cloud Solutions', 'Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration services.',
+       'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Whether you need a website hosted, a virtual server for your apps, or a complete cloud infrastructure — we have you covered. Affordable monthly packages with 24/7 support.', 0, 'cloud', 1],
       ['Software Development', 'Custom web, mobile, and desktop applications.',
        'Transform your ideas into powerful software...', 0, 'development', 1],
       ['Web Development', 'Responsive websites, e-commerce stores, blogs, portals.',
@@ -212,7 +212,60 @@ async function initDB() {
     }
     run('UPDATE services SET has_options = 1 WHERE name = ?', ['Social Media Boosting']);
     run('UPDATE services SET has_options = 1 WHERE name = ?', ['CCTV Camera Installation']);
+
+    const cloudSvc = get('SELECT id FROM services WHERE name = ?', ['Cloud Solutions']);
+    if (cloudSvc) {
+      const cloudOpts = [
+        ['Shared Hosting (Basic)', 'Single website, 10GB storage, 100GB bandwidth — ideal for small sites', 0],
+        ['Business Hosting', '5 websites, 50GB storage, unlimited bandwidth, free SSL', 0],
+        ['VPS Hosting (2GB RAM)', '2 vCPU, 2GB RAM, 40GB SSD, full root access', 0],
+        ['VPS Hosting (4GB RAM)', '2 vCPU, 4GB RAM, 80GB SSD, full root access', 0],
+        ['VPS Hosting (8GB RAM)', '4 vCPU, 8GB RAM, 160GB SSD, full root access', 0],
+        ['Domain Registration (.com/.net/.org)', 'Register or transfer your domain name', 0],
+        ['Business Email Setup', 'Professional email @yourdomain.com (Google/MS)', 0],
+        ['Cloud Migration Service', 'Migrate your website, apps, or data to the cloud', 0],
+        ['Data Backup (Cloud)', 'Automated daily backup for your files/databases', 0],
+        ['Dedicated Server', 'Full dedicated hardware, custom specs, 24/7 support', 0],
+      ];
+      for (const o of cloudOpts) {
+        run('INSERT INTO service_options (service_id, name, description, price) VALUES (?, ?, ?, ?)',
+          [cloudSvc.id, o[0], o[1], o[2]]);
+      }
+    }
+    run('UPDATE services SET has_options = 1 WHERE name = ?', ['Cloud Solutions']);
   }
+
+  try {
+    const cloudSvc = get('SELECT id FROM services WHERE name = ?', ['Cloud Solutions']);
+    if (cloudSvc) {
+      run('UPDATE services SET description = ?, long_description = ? WHERE name = ?',
+        ['Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration services.',
+         'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Whether you need a website hosted, a virtual server for your apps, or a complete cloud infrastructure — we have you covered. Affordable monthly packages with 24/7 support.',
+         'Cloud Solutions']);
+      const existingOpts = get('SELECT COUNT(*) as c FROM service_options WHERE service_id = ?', [cloudSvc.id]);
+      if (existingOpts.c === 0) {
+        const cloudOpts = [
+          ['Shared Hosting (Basic)', 'Single website, 10GB storage, 100GB bandwidth — ideal for small sites', 0],
+          ['Business Hosting', '5 websites, 50GB storage, unlimited bandwidth, free SSL', 0],
+          ['VPS Hosting (2GB RAM)', '2 vCPU, 2GB RAM, 40GB SSD, full root access', 0],
+          ['VPS Hosting (4GB RAM)', '2 vCPU, 4GB RAM, 80GB SSD, full root access', 0],
+          ['VPS Hosting (8GB RAM)', '4 vCPU, 8GB RAM, 160GB SSD, full root access', 0],
+          ['Domain Registration (.com/.net/.org)', 'Register or transfer your domain name', 0],
+          ['Business Email Setup', 'Professional email @yourdomain.com (Google/MS)', 0],
+          ['Cloud Migration Service', 'Migrate your website, apps, or data to the cloud', 0],
+          ['Data Backup (Cloud)', 'Automated daily backup for your files/databases', 0],
+          ['Dedicated Server', 'Full dedicated hardware, custom specs, 24/7 support', 0],
+        ];
+        for (const o of cloudOpts) {
+          run('INSERT INTO service_options (service_id, name, description, price) VALUES (?, ?, ?, ?)',
+            [cloudSvc.id, o[0], o[1], o[2]]);
+        }
+      }
+      if (cloudSvc.has_options === 0 || !cloudSvc.has_options) {
+        run('UPDATE services SET has_options = 1 WHERE name = ?', ['Cloud Solutions']);
+      }
+    }
+  } catch(e) { console.log('[DB] Cloud migration skipped:', e.message); }
 }
 
 module.exports = { initDB, getDB, query, get, all, run, exec, saveDB };
