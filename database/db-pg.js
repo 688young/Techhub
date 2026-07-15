@@ -117,10 +117,17 @@ async function initDB() {
   try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_date TIMESTAMP'); } catch(e) {}
 
   await run(`UPDATE services SET needs_quote = 1, description = 'Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration.', long_description = 'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Affordable monthly packages with 24/7 support.' WHERE name = 'Cloud Solutions'`);
-  await run(`UPDATE services SET needs_quote = 1 WHERE name IN ('Network Setup & Security', 'Computer Maintenance', 'CCTV Camera Installation', 'Software Development', 'Web Development', 'IT Support & Maintenance', 'Data Backup & Recovery', 'Consulting & Strategy')`);
-  await run(`UPDATE services SET needs_quote = 0, has_options = 1, price = 0, description = 'Professional logo design, branding, posters, banners, wedding cards, business cards, flyers, and social media graphics — customized to your brand.', long_description = 'Stand out with stunning visuals! Our expert designers create professional logos, brand identity packages, posters, banners, wedding cards, business cards, flyers, brochures, and social media graphics. Whether you need a new brand look or promotional materials, we deliver high-quality designs that make your business shine. Choose from our packages below or contact us for custom orders.' WHERE name = 'Graphics Design'`);
-  await run(`UPDATE services SET needs_quote = 0, price = 300000 WHERE name = 'Social Media Management'`);
-  await run(`UPDATE services SET needs_quote = 0, price = 10000 WHERE name = 'Social Media Boosting'`);
+  await run(`UPDATE services SET description = 'Structured cabling, router/switch configuration, firewall setup, VPN, and WiFi deployment for homes and businesses.', long_description = 'We design and implement secure, high-performance network infrastructure tailored for homes and businesses. Our services include structured cabling, router and switch configuration, firewall setup, VPN deployment, and WiFi optimization. Get reliable, fast, and secure connectivity.' WHERE name = 'Network Setup & Security'`);
+  await run(`UPDATE services SET description = 'Hardware repair, software installation, virus removal, system optimization, and upgrades.', long_description = 'We keep your computers and laptops running at peak performance. Services include hardware repair and upgrades, software installation, virus and malware removal, system optimization, SSD upgrades, and data backup. Fast, reliable, and affordable.' WHERE name = 'Computer Maintenance'`);
+  await run(`UPDATE services SET description = 'Professional security camera installation with remote viewing on your phone.', long_description = 'Protect your property with professional CCTV solutions. We install and configure dome, bullet, PTZ, IP, and wireless cameras with remote viewing on your phone. 24/7 monitoring, motion detection, and cloud storage options available.' WHERE name = 'CCTV Camera Installation'`);
+  await run(`UPDATE services SET description = 'Custom web, mobile app, and desktop software development for your business.', long_description = 'Transform your ideas into powerful software. We build custom web applications, mobile apps (Android & iOS), desktop software, APIs, and system integration. From startups to enterprises, we deliver scalable, high-quality solutions.' WHERE name = 'Software Development'`);
+  await run(`UPDATE services SET description = 'Responsive websites, e-commerce stores, blogs, and web portals.', long_description = 'Establish your online presence with a professional website. We create responsive websites, e-commerce stores, blogs, custom web portals, and web applications using modern technologies. Fast loading, mobile-friendly, SEO optimized.' WHERE name = 'Web Development'`);
+  await run(`UPDATE services SET description = '24/7 help desk, remote support, system monitoring, and IT maintenance.', long_description = 'Never worry about IT issues again. Our team provides 24/7 help desk support, remote assistance, system monitoring, proactive maintenance, and on-site support when needed. Keep your business running smoothly.' WHERE name = 'IT Support & Maintenance'`);
+  await run(`UPDATE services SET description = 'Automated backups, data recovery, and disaster recovery planning.', long_description = 'Protect your valuable data from loss. We provide automated on-site and cloud backup solutions, data recovery services, and comprehensive disaster recovery planning for businesses of all sizes.' WHERE name = 'Data Backup & Recovery'`);
+  await run(`UPDATE services SET description = 'Technology roadmap, digital transformation, IT strategy, and technology audits.', long_description = 'Make informed technology decisions with our consulting services. We help businesses plan their technology roadmap, implement digital transformation, conduct IT audits, and optimize their technology investments.' WHERE name = 'Consulting & Strategy'`);
+  await run(`UPDATE services SET needs_quote = 0, has_options = 1, price = 0, description = 'Professional logo design, branding, posters, banners, wedding cards, business cards, flyers, and social media graphics.', long_description = 'Stand out with stunning visuals! Our expert designers create professional logos, brand identity packages, posters, banners, wedding cards, business cards, flyers, brochures, and social media graphics. Choose from our packages below or contact us for custom orders.' WHERE name = 'Graphics Design'`);
+  await run(`UPDATE services SET needs_quote = 0, has_options = 1, price = 0, description = 'Professional social media content creation, posting, scheduling, and account growth.', long_description = 'Grow your online presence with our social media management services. We handle content creation, posting, scheduling, audience engagement, analytics, and ad management across all major platforms. Packages available for all budgets.' WHERE name = 'Social Media Management'`);
+  await run(`UPDATE services SET needs_quote = 0, has_options = 1, price = 0 WHERE name = 'Social Media Boosting'`);
 
   const socialSvc = await get('SELECT id FROM services WHERE name = $1', ['Social Media Boosting']);
   if (socialSvc) {
@@ -206,6 +213,78 @@ async function initDB() {
       }
     }
   }
+
+  async function seedOptions(serviceName, opts) {
+    const svc = await get('SELECT id FROM services WHERE name = $1', [serviceName]);
+    if (!svc) return;
+    const cnt = await get('SELECT COUNT(*) as c FROM service_options WHERE service_id = $1', [svc.id]);
+    if (parseInt(cnt.c) === 0) {
+      for (const o of opts) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [svc.id, o[0], o[1], o[2]]);
+      }
+      console.log('  Seeded options for', serviceName);
+    }
+  }
+
+  await seedOptions('Network Setup & Security', [
+    ['Home Network Setup', 'Complete home WiFi network setup with router configuration', 0],
+    ['Office Network Setup', 'Full office network with switches, structured cabling, and WiFi', 0],
+    ['WiFi Installation & Optimization', 'WiFi access point installation, mesh setup, signal optimization', 0],
+    ['Firewall & Security Setup', 'Network firewall installation and security configuration', 0],
+    ['VPN Configuration', 'Site-to-site or remote access VPN setup', 0],
+    ['Structured Cabling', 'Professional Ethernet cabling for offices and buildings', 0],
+  ]);
+  await seedOptions('Computer Maintenance', [
+    ['PC Tune-up & Optimization', 'Cleanup, speed up, and optimize your computer', 0],
+    ['Virus & Malware Removal', 'Full system scan, virus removal, and protection setup', 0],
+    ['Hardware Repair', 'Diagnostic and repair of computer hardware issues', 0],
+    ['Software Installation', 'Windows/Mac installation, drivers, and essential software', 0],
+    ['SSD Upgrade', 'Upgrade from HDD to SSD for faster performance', 0],
+    ['Data Recovery', 'Recover lost or deleted files from damaged drives', 0],
+  ]);
+  await seedOptions('Software Development', [
+    ['Web Application', 'Custom web application built with modern technologies', 0],
+    ['Mobile App (Android)', 'Native Android app development', 0],
+    ['Mobile App (iOS)', 'Native iOS app development', 0],
+    ['Desktop Application', 'Windows/Mac desktop software development', 0],
+    ['API Development', 'RESTful or GraphQL API development and integration', 0],
+    ['System Integration', 'Connect and integrate your business systems', 0],
+  ]);
+  await seedOptions('Web Development', [
+    ['Basic Website (5 pages)', 'Simple responsive website with up to 5 pages', 0],
+    ['Business Website (10 pages)', 'Professional business website with up to 10 pages', 0],
+    ['E-commerce Store', 'Online store with product management and payments', 0],
+    ['Blog / Content Portal', 'Blog or content management website', 0],
+    ['Custom Web Portal', 'Custom web portal with user accounts and features', 0],
+    ['Website Redesign', 'Redesign and modernize your existing website', 0],
+  ]);
+  await seedOptions('IT Support & Maintenance', [
+    ['Monthly Support (Basic)', 'Remote support, 5 hours/month, email & phone', 0],
+    ['Monthly Support (Premium)', 'Remote + on-site support, 15 hours/month, priority response', 0],
+    ['One-time Fix', 'Single issue diagnosis and resolution', 0],
+    ['Remote Support Session', 'One remote support session (up to 2 hours)', 0],
+    ['System Audit', 'Full IT systems audit and recommendations', 0],
+  ]);
+  await seedOptions('Data Backup & Recovery', [
+    ['Automated Backup Setup', 'Configure automatic backups for your systems', 0],
+    ['Cloud Backup Subscription', 'Monthly cloud backup service (per GB)', 0],
+    ['Disaster Recovery Plan', 'Comprehensive disaster recovery planning and documentation', 0],
+    ['Data Recovery Service', 'Professional data recovery from failed drives', 0],
+  ]);
+  await seedOptions('Consulting & Strategy', [
+    ['Technology Audit', 'Full audit of your current technology stack and infrastructure', 0],
+    ['IT Strategy Planning', 'Strategic IT planning aligned with your business goals', 0],
+    ['Digital Transformation', 'Plan and implement your digital transformation journey', 0],
+    ['Technology Roadmap', 'Create a 1-3 year technology roadmap for your business', 0],
+    ['Cloud Strategy', 'Cloud adoption strategy and migration planning', 0],
+  ]);
+  await seedOptions('Social Media Management', [
+    ['Basic Package (3 posts/week)', '3 posts per week on one platform + engagement', 150000],
+    ['Standard Package (5 posts/week)', '5 posts per week on two platforms + engagement + stories', 250000],
+    ['Premium Package (Daily posts)', 'Daily posts on all platforms + stories + ads + analytics', 400000],
+    ['Account Setup & Optimization', 'Profile setup, bio optimization, and branding', 50000],
+  ]);
 
   const adminExists = await get('SELECT id FROM users WHERE role = $1', ['admin']);
   if (!adminExists) {
@@ -319,6 +398,66 @@ async function initDB() {
       }
       await run('UPDATE services SET has_options = 1, price = 0 WHERE name = $1', ['Graphics Design']);
     }
+
+    await seedOptions('Network Setup & Security', [
+      ['Home Network Setup', 'Complete home WiFi network setup with router configuration', 0],
+      ['Office Network Setup', 'Full office network with switches, structured cabling, and WiFi', 0],
+      ['WiFi Installation & Optimization', 'WiFi access point installation, mesh setup, signal optimization', 0],
+      ['Firewall & Security Setup', 'Network firewall installation and security configuration', 0],
+      ['VPN Configuration', 'Site-to-site or remote access VPN setup', 0],
+      ['Structured Cabling', 'Professional Ethernet cabling for offices and buildings', 0],
+    ]);
+    await seedOptions('Computer Maintenance', [
+      ['PC Tune-up & Optimization', 'Cleanup, speed up, and optimize your computer', 0],
+      ['Virus & Malware Removal', 'Full system scan, virus removal, and protection setup', 0],
+      ['Hardware Repair', 'Diagnostic and repair of computer hardware issues', 0],
+      ['Software Installation', 'Windows/Mac installation, drivers, and essential software', 0],
+      ['SSD Upgrade', 'Upgrade from HDD to SSD for faster performance', 0],
+      ['Data Recovery', 'Recover lost or deleted files from damaged drives', 0],
+    ]);
+    await seedOptions('Software Development', [
+      ['Web Application', 'Custom web application built with modern technologies', 0],
+      ['Mobile App (Android)', 'Native Android app development', 0],
+      ['Mobile App (iOS)', 'Native iOS app development', 0],
+      ['Desktop Application', 'Windows/Mac desktop software development', 0],
+      ['API Development', 'RESTful or GraphQL API development and integration', 0],
+      ['System Integration', 'Connect and integrate your business systems', 0],
+    ]);
+    await seedOptions('Web Development', [
+      ['Basic Website (5 pages)', 'Simple responsive website with up to 5 pages', 0],
+      ['Business Website (10 pages)', 'Professional business website with up to 10 pages', 0],
+      ['E-commerce Store', 'Online store with product management and payments', 0],
+      ['Blog / Content Portal', 'Blog or content management website', 0],
+      ['Custom Web Portal', 'Custom web portal with user accounts and features', 0],
+      ['Website Redesign', 'Redesign and modernize your existing website', 0],
+    ]);
+    await seedOptions('IT Support & Maintenance', [
+      ['Monthly Support (Basic)', 'Remote support, 5 hours/month, email & phone', 0],
+      ['Monthly Support (Premium)', 'Remote + on-site support, 15 hours/month, priority response', 0],
+      ['One-time Fix', 'Single issue diagnosis and resolution', 0],
+      ['Remote Support Session', 'One remote support session (up to 2 hours)', 0],
+      ['System Audit', 'Full IT systems audit and recommendations', 0],
+    ]);
+    await seedOptions('Data Backup & Recovery', [
+      ['Automated Backup Setup', 'Configure automatic backups for your systems', 0],
+      ['Cloud Backup Subscription', 'Monthly cloud backup service (per GB)', 0],
+      ['Disaster Recovery Plan', 'Comprehensive disaster recovery planning and documentation', 0],
+      ['Data Recovery Service', 'Professional data recovery from failed drives', 0],
+    ]);
+    await seedOptions('Consulting & Strategy', [
+      ['Technology Audit', 'Full audit of your current technology stack and infrastructure', 0],
+      ['IT Strategy Planning', 'Strategic IT planning aligned with your business goals', 0],
+      ['Digital Transformation', 'Plan and implement your digital transformation journey', 0],
+      ['Technology Roadmap', 'Create a 1-3 year technology roadmap for your business', 0],
+      ['Cloud Strategy', 'Cloud adoption strategy and migration planning', 0],
+    ]);
+    await seedOptions('Social Media Management', [
+      ['Basic Package (3 posts/week)', '3 posts per week on one platform + engagement', 150000],
+      ['Standard Package (5 posts/week)', '5 posts per week on two platforms + engagement + stories', 250000],
+      ['Premium Package (Daily posts)', 'Daily posts on all platforms + stories + ads + analytics', 400000],
+      ['Account Setup & Optimization', 'Profile setup, bio optimization, and branding', 50000],
+    ]);
+    await run('UPDATE services SET has_options = 1 WHERE name IN (\'Social Media Management\', \'Network Setup & Security\', \'Computer Maintenance\', \'Software Development\', \'Web Development\', \'IT Support & Maintenance\', \'Data Backup & Recovery\', \'Consulting & Strategy\')');
   }
 
   console.log('Database initialized');
