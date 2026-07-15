@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request Sent - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/services">Services</a>
+        <a href="/logout">Logout</a>
+      </nav>
+    </div>
+  </header>
+  <section class="section">
+    <div class="container">
+      <div class="confirm-box" style="text-align:center">
+        <div style="font-size:4rem;margin-bottom:10px">&#9989;</div>
+        <h2>Request Sent Successfully!</h2>
+        <p style="font-size:1.1rem;margin:16px 0"><strong><%= service %></strong></p>
+        <% if (location) { %><p>Location: <%= location %></p><% } %>
+        <% if (quantity) { %><p>Quantity: <%= quantity %></p><% } %>
+        <hr />
+        <p>We have received your request. Our team will contact you shortly to discuss the details and schedule a visit.</p>
+        <p style="color:var(--accent-1);margin-top:10px">Thank you for choosing TechHub Company!</p>
+        <a href="/dashboard" class="btn" style="margin-top:20px;display:inline-block">Go to Dashboard</a>
+        <a href="/services" class="btn" style="background:#444;margin-top:10px;display:inline-block">Browse More Services</a>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
