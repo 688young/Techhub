@@ -36,7 +36,7 @@ function sendEmail(to, subject, html) {
     from: '"TechHub Company" <sosthenes688@gmail.com>',
     to, subject, html
   }).then(r => console.log('[EMAIL] Sent to', to, ':', r.messageId))
-    .catch(e => console.error('[EMAIL] Failed to', to, ':', e.message));
+    .catch(e => console.error('[EMAIL] Failed to', to, ':', e.message, '-', e.code || ''));
 }
 
 function formatTZS(n) {
