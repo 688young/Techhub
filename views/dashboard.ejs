@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/services">Services</a>
+        <a href="/logout">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <% if (msg) { %><div class="alert <%= error ? 'alert-error' : 'alert-success' %>"><%= msg %></div><% } %>
+  <% if (locals.welcome) { %>
+    <div id="welcomeOverlay" class="welcome-overlay">
+      <div class="welcome-scene">
+        <div class="speech-bubble">YOUR WELCOME, <%= user.username %>!</div>
+        <div class="running-character">
+          <div class="character-body">
+            <div class="head"><div class="face"><div class="eye left"></div><div class="eye right"></div><div class="smile"></div></div></div>
+            <div class="torso"></div>
+            <div class="arm left-arm"></div>
+            <div class="arm right-arm"></div>
+            <div class="leg left-leg"></div>
+            <div class="leg right-leg"></div>
+          </div>
+          <div class="shadow"></div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <section class="section">
+    <div class="container">
+      <h2>Welcome, <%= user.username %>!</h2>
+      <div class="stats-row">
+        <div class="stat"><strong><%= stats.total %></strong> Total</div>
+        <div class="stat"><strong><%= stats.pending %></strong> Pending</div>
+        <div class="stat"><strong><%= stats.confirmed %></strong> Active</div>
+        <div class="stat"><strong><%= stats.completed %></strong> Done</div>
+      </div>
+
+      <div class="dash-menu">
+        <button class="dash-btn dash-btn-purple" onclick="showSection('pendingSec')"><span class="dash-icon">&#9203;</span> Pending Orders <span class="dash-count"><%= stats.pending %></span></button>
+        <button class="dash-btn dash-btn-blue" onclick="showSection('activeSec')"><span class="dash-icon">&#9889;</span> Active Orders <span class="dash-count"><%= stats.confirmed %></span></button>
+        <button class="dash-btn dash-btn-green" onclick="showSection('doneSec')"><span class="dash-icon">&#10004;</span> Completed <span class="dash-count"><%= stats.completed %></span></button>
+        <button class="dash-btn dash-btn-gold" onclick="showSection('paymentSec')"><span class="dash-icon">&#128179;</span> Payment Info</button>
+        <a href="/services" class="dash-btn dash-btn-cyan"><span class="dash-icon">&#128722;</span> Order Service</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pending Orders -->
+  <section id="pendingSec" class="dash-section">
+    <div class="container">
+      <h3>&#9203; Pending Orders</h3>
+      <% if (pendingOrders.length === 0) { %><p class="empty">No pending orders.</p><% } %>
+      <% pendingOrders.forEach(function(o) { %>
+        <div class="dash-card">
+          <div class="dash-card-top">
+            <strong>#<%= o.id %> <%= o.service %><%= o.service_option ? ' - '+o.service_option : '' %></strong>
+            <span class="badge badge-<%= o.status %>"><%= o.is_confirmed === 0 ? 'Awaiting' : o.status %></span>
+          </div>
+          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+          <% if (!o.is_confirmed) { %>
+            <form method="POST" action="/order/confirm" class="dash-inline-form">
+              <input type="hidden" name="order_id" value="<%= o.id %>" />
+              <input type="text" name="code" placeholder="Confirmation code" required maxlength="6" class="dash-input" />
+              <button type="submit" class="btn-sm">Confirm</button>
+            </form>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- Active Orders -->
+  <section id="activeSec" class="dash-section">
+    <div class="container">
+      <h3>&#9989; Active Orders</h3>
+      <% if (activeOrders.length === 0) { %><p class="empty">No active orders.</p><% } %>
+      <% activeOrders.forEach(function(o) { %>
+        <div class="dash-card">
+          <div class="dash-card-top">
+            <strong>#<%= o.id %> <%= o.service %></strong>
+            <span class="badge badge-confirmed">Active</span>
+          </div>
+          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+          <div class="dash-card-info" style="color:#00d4ff">
+            TxID: <%= o.transaction_id || 'Not submitted' %> | Payment: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+          </div>
+          <% if (!o.transaction_id) { %>
+            <form method="POST" action="/order/proof" class="dash-inline-form">
+              <input type="hidden" name="order_id" value="<%= o.id %>" />
+              <input type="text" name="transaction_id" placeholder="Enter transaction/reference ID" required class="dash-input" />
+              <button type="submit" class="btn-sm btn-green">Submit Proof</button>
+            </form>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- Completed Orders -->
+  <section id="doneSec" class="dash-section">
+    <div class="container">
+      <h3>&#10004; Completed Orders</h3>
+      <% if (completedOrders.length === 0) { %><p class="empty">No completed orders.</p><% } %>
+      <% completedOrders.forEach(function(o) { %>
+        <div class="dash-card">
+          <div class="dash-card-top">
+            <strong>#<%= o.id %> <%= o.service %></strong>
+            <span class="badge badge-completed">Done</span>
+          </div>
+          <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.created_at %></div>
+        </div>
+      <% }); %>
+    </div>
+  </section>
+
+  <!-- Payment Info -->
+  <section id="paymentSec" class="dash-section">
+    <div class="container">
+      <h3>&#128179; Payment Information</h3>
+      <div class="payment-cards">
+        <div class="pay-card">
+          <h4>MIX by YAS (Mobile)</h4>
+          <p>Number: <strong><%= paymentInfo.mobile.number %></strong></p>
+          <p>Name: <strong><%= paymentInfo.mobile.name %></strong></p>
+        </div>
+        <div class="pay-card">
+          <h4>Equity Bank</h4>
+          <p>Account: <strong><%= paymentInfo.bank.account %></strong></p>
+          <p>Name: <strong><%= paymentInfo.bank.name %></strong></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 TechHub Company. Developed by <strong>Ernest Sosthenes</strong></p>
+    </div>
+  </footer>
+
+  <script>
+    var wo = document.getElementById('welcomeOverlay');
+    if (wo) { setTimeout(function() { wo.style.transition = 'opacity 0.6s ease'; wo.style.opacity = '0'; setTimeout(function() { wo.style.display = 'none'; }, 600); }, 3000); }
+
+    function showSection(id) {
+      var sections = document.querySelectorAll('.dash-section');
+      sections.forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
+  </script>
+</body>
+</html>
