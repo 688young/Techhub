@@ -25,12 +25,12 @@
           <div class="order-details">
             <h3><%= service.name %></h3>
             <p><%= service.long_description %></p>
-            <p style="color:var(--accent-1);font-weight:700">&#128205; This service requires an on-site visit. Our team will contact you.</p>
+            <p style="color:var(--accent-1);font-weight:700">&#128205; This service requires a consultation/visit. Our team will contact you with a quote.</p>
             <% if (options.length > 0) { %>
-              <div style="margin-top:14px"><strong>Available Options:</strong>
+              <div style="margin-top:14px"><strong>Available Packages:</strong>
                 <ul style="margin-top:6px;padding-left:18px">
                   <% options.forEach(function(o) { %>
-                    <li style="margin-bottom:4px;font-size:0.85rem;color:var(--text-secondary)"><%= o.name %> — <%= o.description %></li>
+                    <li style="margin-bottom:6px;font-size:0.85rem;color:var(--text-secondary)"><strong><%= o.name %></strong> — <%= o.description %></li>
                   <% }); %>
                 </ul>
               </div>
@@ -42,6 +42,15 @@
               <input type="hidden" name="service_id" value="<%= service.id %>" />
               <input type="text" name="name" placeholder="Your Full Name" value="<%= user.username %>" required />
               <input type="text" name="phone" placeholder="Phone Number (e.g. 0618001980)" required />
+              <% if (options.length > 0) { %>
+                <label>Choose Package:</label>
+                <select name="selected_option" style="margin-bottom:10px">
+                  <option value="">-- Select a package (optional) --</option>
+                  <% options.forEach(function(o) { %>
+                    <option value="<%= o.name %>"><%= o.name %></option>
+                  <% }); %>
+                </select>
+              <% } %>
               <select name="location" required>
                 <option value="">-- Select Location --</option>
                 <option value="Home / Residence">Home / Residence</option>
@@ -53,8 +62,8 @@
                 <option value="Hospital / Clinic">Hospital / Clinic</option>
                 <option value="Other">Other</option>
               </select>
-              <input type="number" name="quantity" placeholder="Quantity (e.g. number of cameras, computers)" min="1" />
-              <textarea name="description" placeholder="Describe what you need..." rows="4"></textarea>
+              <input type="number" name="quantity" placeholder="Quantity (e.g. number of units)" min="1" />
+              <textarea name="description" placeholder="Describe what you need in detail..." rows="4"></textarea>
               <button type="submit" class="btn">Submit Request</button>
             </form>
           </div>
