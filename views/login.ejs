@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <% if (locals.goodbye) { %>
+    <div id="goodbyeOverlay" class="welcome-overlay">
+      <div class="welcome-box">
+        <div class="goodbye-icon">&#128075;</div>
+        <h1>Goodbye!</h1>
+        <p>See you later!</p>
+        <button onclick="closeGoodbye()" class="btn">Login Again</button>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="auth-container">
+    <div class="auth-box">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <p class="motto">&#8220;Empowering Your Digital Future&#8221;</p>
+      <p class="aim">&#128205; Our Aim: To provide innovative, reliable &amp; affordable IT solutions across Tanzania</p>
+      <h2>Login</h2>
+      <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
+      <form method="POST" action="/login">
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit" class="btn">Login</button>
+      </form>
+      <p class="auth-link"><a href="/forgot-password">Forgot Password?</a></p>
+      <p class="auth-link">Don't have an account? <a href="/signup">Sign Up</a></p>
+    </div>
+  </div>
+
+  <script>
+    function closeGoodbye() {
+      var el = document.getElementById('goodbyeOverlay');
+      if (el) {
+        el.style.transition = 'opacity 0.4s ease';
+        el.style.opacity = '0';
+        setTimeout(function() { el.style.display = 'none'; }, 400);
+      }
+    }
+  </script>
+</body>
+</html>
