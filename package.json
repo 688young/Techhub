@@ -1,0 +1,20 @@
+{
+  "name": "techhub",
+  "version": "1.0.0",
+  "description": "TechHub - IT Services Website with Admin Panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "africastalking": "^0.8.0",
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "isomorphic-git": "^1.38.7",
+    "nodemailer": "^6.9.15",
+    "sql.js": "^1.11.0"
+  }
+}
