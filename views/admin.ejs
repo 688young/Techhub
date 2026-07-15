@@ -121,44 +121,46 @@
       <h2>All Orders (<%= orders.length %>)</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirmed</th><th>Payment Proof</th><th>Payment Verified</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Details</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
             <% orders.forEach(function(o) { %>
-              <tr>
+              <tr class="<%= o.status === 'quote' ? 'row-quote' : '' %>">
                 <td><%= o.id %></td>
                 <td><%= o.customer_name %></td>
                 <td><%= o.customer_email %></td>
                 <td><%= o.service %><%= o.service_option ? ' ('+o.service_option+')' : '' %></td>
-                <td><%= formatTZS(o.price) %></td>
+                <td><%= o.status === 'quote' ? 'Quote' : formatTZS(o.price) %></td>
                 <td><%= o.phone || '-' %></td>
-                <td><%= o.payment_network || '-' %></td>
-                <td><%= o.confirmation_code || '-' %></td>
-                <td><%= o.is_confirmed ? 'Yes' : 'No' %></td>
-                <td><%= o.transaction_id || '-' %></td>
                 <td>
-                  <% if (o.transaction_id) { %>
-                    <%= o.payment_verified ? 'Verified' : 'Pending' %>
-                    <% if (!o.payment_verified) { %>
-                      <form method="POST" action="/admin/payment/verify" style="display:inline">
-                        <input type="hidden" name="id" value="<%= o.id %>" />
-                        <button type="submit" class="btn-sm" style="background:#27ae60;color:#fff">Verify</button>
-                      </form>
-                    <% } else { %>
-                      <form method="POST" action="/admin/payment/unverify" style="display:inline">
-                        <input type="hidden" name="id" value="<%= o.id %>" />
-                        <button type="submit" class="btn-sm btn-danger">Unverify</button>
-                      </form>
-                    <% } %>
+                  <% if (o.status === 'quote') { %>
+                    <span style="font-size:0.78rem;color:var(--accent-1)"><%= o.service_option || 'Quote request' %></span>
                   <% } else { %>
-                    -
+                    <span style="font-size:0.78rem;color:var(--text-muted)">
+                      Tx: <%= o.transaction_id || '-' %>
+                      <% if (o.transaction_id) { %>
+                        | Pay: <%= o.payment_verified ? 'Verified' : 'Pending' %>
+                        <% if (!o.payment_verified) { %>
+                          <form method="POST" action="/admin/payment/verify" style="display:inline">
+                            <input type="hidden" name="id" value="<%= o.id %>" />
+                            <button type="submit" class="btn-sm" style="background:#27ae60;color:#fff">Verify</button>
+                          </form>
+                        <% } else { %>
+                          <form method="POST" action="/admin/payment/unverify" style="display:inline">
+                            <input type="hidden" name="id" value="<%= o.id %>" />
+                            <button type="submit" class="btn-sm btn-danger">Unverify</button>
+                          </form>
+                        <% } %>
+                      <% } %>
+                    </span>
                   <% } %>
                 </td>
-                <td><span class="status-<%= o.status %>"><%= o.status %></span></td>
+                <td><span class="status-<%= o.status %>"><%= o.status === 'quote' ? 'Quote Request' : o.status %></span></td>
                 <td><%= o.created_at %></td>
                 <td>
                   <form method="POST" action="/admin/order/status" style="display:inline-flex;gap:4px;flex-wrap:wrap">
                     <input type="hidden" name="id" value="<%= o.id %>" />
                     <select name="status">
+                      <option value="quote" <%= o.status === 'quote' ? 'selected' : '' %>>Quote</option>
                       <option value="pending" <%= o.status === 'pending' ? 'selected' : '' %>>Pending</option>
                       <option value="confirmed" <%= o.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
                       <option value="completed" <%= o.status === 'completed' ? 'selected' : '' %>>Completed</option>
