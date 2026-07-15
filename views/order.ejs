@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order - TechHub Company</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="logo">TECHHUB COMPANY</h1>
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/services">Services</a>
+        <a href="/logout">Logout (<%= user.username %>)</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <h2>Order Service</h2>
+      <div class="order-layout">
+        <div class="order-details">
+          <h3><%= service.name %></h3>
+          <p><%= service.long_description %></p>
+          <p class="price">Price: <%= formatTZS(service.price) %></p>
+        </div>
+        <div class="order-form">
+          <% if (error) { %><p class="error-msg"><%= error %></p><% } %>
+          <form method="POST" action="/order">
+            <input type="hidden" name="service_id" value="<%= service.id %>" />
+            <% if (options.length > 0) { %>
+              <label>Choose Option:</label>
+              <select name="service_option_id" required>
+                <option value="">-- Select --</option>
+                <% options.forEach(function(o) { %>
+                  <option value="<%= o.id %>" <%= queryOpt == o.id ? 'selected' : '' %>><%= o.name %> - <%= formatTZS(o.price) %></option>
+                <% }); %>
+              </select>
+            <% } %>
+            <input type="text" name="phone" placeholder="Your Phone Number" required />
+            <label>Payment Network:</label>
+            <select name="payment_network" required>
+              <option value="">-- Select Payment Method --</option>
+              <option value="MIX by YAS">MIX by YAS (45490505)</option>
+              <option value="Equity Bank">Equity Bank (3015111947559)</option>
+            </select>
+            <button type="submit" class="btn">Place Order</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
