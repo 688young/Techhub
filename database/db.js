@@ -65,8 +65,9 @@ async function initDB() {
         long_description TEXT DEFAULT '',
         price REAL NOT NULL DEFAULT 0,
         category TEXT DEFAULT 'general',
-        is_active INTEGER DEFAULT 1,
-        has_options INTEGER DEFAULT 0
+      is_active INTEGER DEFAULT 1,
+      has_options INTEGER DEFAULT 0,
+      needs_quote INTEGER DEFAULT 0
       )
     `);
   }
@@ -132,33 +133,33 @@ async function initDB() {
   if (parseInt(count.c) === 0) {
     const svc = [
       ['Network Setup & Security', 'Structured cabling, router/switch configuration, firewall setup, VPN, and WiFi deployment.',
-       'We design and implement secure, high-performance network infrastructure...', 500000, 'networking'],
+       'We design and implement secure, high-performance network infrastructure...', 0, 'networking', 1],
       ['Computer Maintenance', 'Hardware repair, software installation, virus removal, system optimization.',
-       'Keep your computers running at peak performance...', 150000, 'maintenance'],
+       'Keep your computers running at peak performance...', 0, 'maintenance', 1],
       ['CCTV Camera Installation', 'Professional security camera installation with remote viewing.',
-       'Protect your property with professional CCTV solutions...', 350000, 'security'],
+       'Protect your property with professional CCTV solutions...', 0, 'security', 1],
       ['Graphics Design', 'Professional logo design, branding, flyers, banners, business cards.',
-       'Stand out with stunning visuals...', 200000, 'design'],
+       'Stand out with stunning visuals...', 200000, 'design', 0],
       ['Social Media Management', 'Content creation, posting, scheduling, account growth.',
-       'Grow your online presence with professional social media management...', 300000, 'marketing'],
+       'Grow your online presence with professional social media management...', 300000, 'marketing', 0],
       ['Social Media Boosting', 'Increase followers, likes, comments, and views on social media.',
-       'Get real engagement on your social media accounts...', 10000, 'marketing'],
+       'Get real engagement on your social media accounts...', 10000, 'marketing', 0],
       ['Cloud Solutions', 'Cloud migration, hosting, virtual machines, storage.',
-       'Move your business to the cloud with confidence...', 800000, 'cloud'],
+       'Move your business to the cloud with confidence...', 0, 'cloud', 1],
       ['Software Development', 'Custom web, mobile, and desktop applications.',
-       'Transform your ideas into powerful software...', 1200000, 'development'],
+       'Transform your ideas into powerful software...', 0, 'development', 1],
       ['Web Development', 'Responsive websites, e-commerce stores, blogs, portals.',
-       'Establish your online presence with a professional website...', 700000, 'development'],
+       'Establish your online presence with a professional website...', 0, 'development', 1],
       ['IT Support & Maintenance', '24/7 help desk, remote support, system monitoring.',
-       'Never worry about IT issues again...', 250000, 'support'],
+       'Never worry about IT issues again...', 0, 'support', 1],
       ['Data Backup & Recovery', 'Automated backups, disaster recovery planning.',
-       'Protect your valuable data from loss...', 400000, 'support'],
+       'Protect your valuable data from loss...', 0, 'support', 1],
       ['Consulting & Strategy', 'Technology roadmap, digital transformation, IT strategy.',
-       'Make informed technology decisions...', 600000, 'consulting'],
+       'Make informed technology decisions...', 0, 'consulting', 1],
     ];
     for (const s of svc) {
-      await run('INSERT INTO services (name, description, long_description, price, category) VALUES ($1, $2, $3, $4, $5)',
-        [s[0], s[1], s[2], s[3], s[4]]);
+      await run('INSERT INTO services (name, description, long_description, price, category, needs_quote) VALUES ($1, $2, $3, $4, $5, $6)',
+        [s[0], s[1], s[2], s[3], s[4], s[5]]);
     }
 
     const socialSvc = await get('SELECT id FROM services WHERE name = $1', ['Social Media Boosting']);
