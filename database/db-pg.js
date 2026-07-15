@@ -118,7 +118,7 @@ async function initDB() {
 
   await run(`UPDATE services SET needs_quote = 1, description = 'Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration.', long_description = 'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Affordable monthly packages with 24/7 support.' WHERE name = 'Cloud Solutions'`);
   await run(`UPDATE services SET needs_quote = 1 WHERE name IN ('Network Setup & Security', 'Computer Maintenance', 'CCTV Camera Installation', 'Software Development', 'Web Development', 'IT Support & Maintenance', 'Data Backup & Recovery', 'Consulting & Strategy')`);
-  await run(`UPDATE services SET needs_quote = 0, price = 200000 WHERE name = 'Graphics Design'`);
+  await run(`UPDATE services SET needs_quote = 0, has_options = 1, price = 0, description = 'Professional logo design, branding, posters, banners, wedding cards, business cards, flyers, and social media graphics — customized to your brand.', long_description = 'Stand out with stunning visuals! Our expert designers create professional logos, brand identity packages, posters, banners, wedding cards, business cards, flyers, brochures, and social media graphics. Whether you need a new brand look or promotional materials, we deliver high-quality designs that make your business shine. Choose from our packages below or contact us for custom orders.' WHERE name = 'Graphics Design'`);
   await run(`UPDATE services SET needs_quote = 0, price = 300000 WHERE name = 'Social Media Management'`);
   await run(`UPDATE services SET needs_quote = 0, price = 10000 WHERE name = 'Social Media Boosting'`);
 
@@ -186,6 +186,27 @@ async function initDB() {
     }
   }
 
+  const gfxSvc = await get('SELECT id FROM services WHERE name = $1', ['Graphics Design']);
+  if (gfxSvc) {
+    await run('UPDATE services SET has_options = 1, price = 0 WHERE name = $1', ['Graphics Design']);
+    const optCount = await get('SELECT COUNT(*) as c FROM service_options WHERE service_id = $1', [gfxSvc.id]);
+    if (parseInt(optCount.c) === 0) {
+      for (const o of [
+        ['Logo Design', 'Professional custom logo for your brand — includes 3 concept options', 20000],
+        ['Poster / Flyer Design', 'Eye-catching posters, flyers, and promotional materials (A4/A3)', 15000],
+        ['Wedding Card Design', 'Elegant wedding invitation cards — fully customized (negotiable)', 0],
+        ['Business Card Design', 'Professional business cards with your brand identity', 10000],
+        ['Banner / Roll-up Design', 'Large format banner, roll-up, and outdoor signage design', 25000],
+        ['Brochure / Catalog', 'Multi-page brochure, catalog, or booklet design', 30000],
+        ['Social Media Graphics', 'Custom posts, stories, and cover images for social media', 8000],
+        ['Brand Identity Package', 'Complete brand kit: logo, colors, fonts, business card, letterhead', 50000],
+      ]) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [gfxSvc.id, o[0], o[1], o[2]]);
+      }
+    }
+  }
+
   const adminExists = await get('SELECT id FROM users WHERE role = $1', ['admin']);
   if (!adminExists) {
     const hash = bcrypt.hashSync('admin123', 10);
@@ -203,8 +224,8 @@ async function initDB() {
        'We keep your computers running at peak performance with professional hardware repair, software installation, virus and malware removal, and system optimization services.', 0, 'maintenance', 1],
       ['CCTV Camera Installation', 'Professional security camera installation with remote viewing.',
        'Protect your property with professional CCTV solutions. We install and configure dome, bullet, PTZ, IP, and wireless cameras with remote viewing on your phone.', 0, 'security', 1],
-      ['Graphics Design', 'Professional logo design, branding, flyers, banners, business cards.',
-       'Stand out with stunning visuals! Our designers create professional logos, branding materials, flyers, banners, business cards, and social media graphics.', 200000, 'design', 0],
+      ['Graphics Design', 'Professional logo design, branding, posters, banners, wedding cards, business cards, flyers, and social media graphics — customized to your brand.',
+       'Stand out with stunning visuals! Our expert designers create professional logos, brand identity packages, posters, banners, wedding cards, business cards, flyers, brochures, and social media graphics. Whether you need a new brand look or promotional materials, we deliver high-quality designs that make your business shine.', 0, 'design', 0],
       ['Social Media Management', 'Content creation, posting, scheduling, account growth.',
        'Grow your online presence with professional social media management including content creation, posting, scheduling, and audience engagement.', 300000, 'marketing', 0],
       ['Social Media Boosting', 'Increase followers, likes, comments, and views on social media.',
@@ -279,6 +300,24 @@ async function initDB() {
           [cloudSvc.id, o[0], o[1], o[2]]);
       }
       await run('UPDATE services SET has_options = 1 WHERE name = $1', ['Cloud Solutions']);
+    }
+
+    const gfxSvc = await get('SELECT id FROM services WHERE name = $1', ['Graphics Design']);
+    if (gfxSvc) {
+      for (const o of [
+        ['Logo Design', 'Professional custom logo for your brand — includes 3 concept options', 20000],
+        ['Poster / Flyer Design', 'Eye-catching posters, flyers, and promotional materials (A4/A3)', 15000],
+        ['Wedding Card Design', 'Elegant wedding invitation cards — fully customized (negotiable)', 0],
+        ['Business Card Design', 'Professional business cards with your brand identity', 10000],
+        ['Banner / Roll-up Design', 'Large format banner, roll-up, and outdoor signage design', 25000],
+        ['Brochure / Catalog', 'Multi-page brochure, catalog, or booklet design', 30000],
+        ['Social Media Graphics', 'Custom posts, stories, and cover images for social media', 8000],
+        ['Brand Identity Package', 'Complete brand kit: logo, colors, fonts, business card, letterhead', 50000],
+      ]) {
+        await run('INSERT INTO service_options (service_id, name, description, price) VALUES ($1, $2, $3, $4)',
+          [gfxSvc.id, o[0], o[1], o[2]]);
+      }
+      await run('UPDATE services SET has_options = 1, price = 0 WHERE name = $1', ['Graphics Design']);
     }
   }
 
