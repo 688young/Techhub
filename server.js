@@ -221,6 +221,24 @@ async function start() {
     }
   }));
 
+  app.post('/order/quote', isAuth, wrap(async (req, res) => {
+    const { service_id, name, phone, location, quantity, description } = req.body;
+    const service = await get('SELECT * FROM services WHERE id = $1 AND is_active = 1', [service_id]);
+    if (!service) return res.redirect('/services');
+    const details = `Location: ${location || 'N/A'} | Qty: ${quantity || 'N/A'} | Desc: ${description || 'N/A'}`;
+    await run(`INSERT INTO orders (user_id, customer_name, customer_email, service, price, phone, status, service_option, is_confirmed)
+      VALUES ($1, $2, $3, $4, 0, $5, 'quote', $6, 1)`,
+      [req.session.user.id, name || req.session.user.username, req.session.user.email, service.name, phone, details]);
+    sendEmail('sosthenes688@gmail.com', `Service Request: ${service.name} from ${name}`,
+      `<h2>New Service Request</h2><p><strong>Service:</strong> ${service.name}</p><p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p><p><strong>Location:</strong> ${location || 'Not specified'}</p><p><strong>Quantity:</strong> ${quantity || 'Not specified'}</p><p><strong>Description:</strong> ${description || 'Not specified'}</p><hr><p>Login to admin to view all requests.</p>`);
+    const extra = location ? `&location=${encodeURIComponent(location)}&quantity=${encodeURIComponent(quantity||'')}&desc=${encodeURIComponent(description||'')}` : '';
+    res.redirect(`/order/quote-success?service=${encodeURIComponent(service.name)}${extra}`);
+  }));
+
+  app.get('/order/quote-success', isAuth, (req, res) => {
+    res.render('quote-success', { user: req.session.user, service: req.query.service, location: req.query.location, quantity: req.query.quantity, desc: req.query.desc });
+  });
+
   app.post('/order/proof', isAuth, wrap(async (req, res) => {
     const { order_id, transaction_id } = req.body;
     const order = await get('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [order_id, req.session.user.id]);
@@ -234,7 +252,7 @@ async function start() {
     const uid = req.session.user.id;
     const allOrders = await all('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [uid]);
     const pendingOrders = allOrders.filter(o => o.status === 'pending' || o.is_confirmed === 0);
-    const activeOrders = allOrders.filter(o => o.status === 'confirmed');
+    const activeOrders = allOrders.filter(o => o.status === 'confirmed' || o.status === 'quote');
     const completedOrders = allOrders.filter(o => o.status === 'completed');
     const stats = {
       total: allOrders.length,
