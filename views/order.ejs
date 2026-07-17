@@ -82,16 +82,20 @@
               <input type="hidden" name="service_id" value="<%= service.id %>" />
               <% if (options.length > 0) { %>
                 <label>Choose Option:</label>
-                <select name="service_option_id" required>
+                <select name="service_option_id" id="boostOption" required onchange="toggleBoostFields()">
                   <option value="">-- Select --</option>
                   <% options.forEach(function(o) { %>
-                    <option value="<%= o.id %>" <%= queryOpt == o.id ? 'selected' : '' %>><%= o.name %> - <%= formatTZS(o.price) %></option>
+                    <option value="<%= o.id %>" <%= queryOpt == o.id ? 'selected' : '' %> data-name="<%= o.name.toLowerCase() %>"><%= o.name %> - <%= formatTZS(o.price) %></option>
                   <% }); %>
                 </select>
               <% } %>
+              <div id="boostProfileField" style="display:none">
+                <input type="url" name="profile_url" placeholder="Profile / Channel URL (e.g. https://instagram.com/yourpage)" />
+              </div>
+              <div id="boostPostField" style="display:none">
+                <input type="url" name="post_link" placeholder="Post Link (e.g. https://instagram.com/p/abc123)" />
+              </div>
               <input type="text" name="phone" placeholder="Your Phone Number" required />
-              <input type="url" name="profile_url" placeholder="Profile URL (for followers - Social Media Boosting)" />
-              <input type="url" name="post_link" placeholder="Post Link (for likes - Social Media Boosting)" />
               <label>Payment Network:</label>
               <select name="payment_network" required>
                 <option value="">-- Select Payment Method --</option>
@@ -105,5 +109,26 @@
       <% } %>
     </div>
   </section>
+<script>
+function toggleBoostFields() {
+  var sel = document.getElementById('boostOption');
+  if (!sel) return;
+  var opt = sel.options[sel.selectedIndex];
+  var name = opt ? opt.getAttribute('data-name') || '' : '';
+  var profileField = document.getElementById('boostProfileField');
+  var postField = document.getElementById('boostPostField');
+  if (name.includes('follower') || name.includes('subscriber')) {
+    profileField.style.display = 'block';
+    postField.style.display = 'none';
+  } else if (name.includes('like') || name.includes('view') || name.includes('comment')) {
+    profileField.style.display = 'none';
+    postField.style.display = 'block';
+  } else {
+    profileField.style.display = 'none';
+    postField.style.display = 'none';
+  }
+}
+toggleBoostFields();
+</script>
 </body>
 </html>
