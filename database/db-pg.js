@@ -99,6 +99,8 @@ async function initDB() {
       transaction_id VARCHAR(255) DEFAULT '',
       payment_verified INTEGER DEFAULT 0,
       payment_proof_date TIMESTAMP,
+      profile_url TEXT DEFAULT '',
+      post_link TEXT DEFAULT '',
       status VARCHAR(50) DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -115,6 +117,8 @@ async function initDB() {
   try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(255) DEFAULT \'\''); } catch(e) {}
   try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_verified INTEGER DEFAULT 0'); } catch(e) {}
   try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_date TIMESTAMP'); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS profile_url TEXT DEFAULT \'\''); } catch(e) {}
+  try { await run('ALTER TABLE orders ADD COLUMN IF NOT EXISTS post_link TEXT DEFAULT \'\''); } catch(e) {}
 
   await run(`UPDATE services SET needs_quote = 1, description = 'Cloud hosting, VPS, domain registration, email hosting, backup solutions, and cloud migration.', long_description = 'Take your business to the cloud with TechHub! We offer reliable cloud hosting, VPS servers, domain registration, business email setup, Google Workspace, Microsoft 365, online data backup, and cloud migration. Affordable monthly packages with 24/7 support.' WHERE name = 'Cloud Solutions'`);
   await run(`UPDATE services SET description = 'Structured cabling, router/switch configuration, firewall setup, VPN, and WiFi deployment for homes and businesses.', long_description = 'We design and implement secure, high-performance network infrastructure tailored for homes and businesses. Our services include structured cabling, router and switch configuration, firewall setup, VPN deployment, and WiFi optimization. Get reliable, fast, and secure connectivity.' WHERE name = 'Network Setup & Security'`);
