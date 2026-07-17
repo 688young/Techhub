@@ -267,7 +267,7 @@
       </div>
       <div class="table-wrap-modern">
         <table>
-          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirm</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <thead><tr><th>ID</th><th>Customer</th><th>Email</th><th>Service</th><th>Price</th><th>Phone</th><th>Payment</th><th>Code</th><th>Confirm</th><th>Profile/Post</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
             <% orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).forEach(function(o) { %>
               <tr class="table-row" style="<%= o.is_confirmed === 0 ? 'background:rgba(245,158,11,0.04)' : '' %>">
@@ -280,6 +280,7 @@
                 <td><%= o.payment_network || '-' %></td>
                 <td style="font-family:monospace"><%= o.confirmation_code || '-' %></td>
                 <td><%= o.is_confirmed ? '<span class="status-badge completed">Yes</span>' : '<span class="status-badge pending">No</span>' %></td>
+                <td style="font-size:11px;max-width:120px;word-break:break-all"><%= o.profile_url ? 'Profile: '+o.profile_url : '' %><%= o.profile_url && o.post_link ? '<br>' : '' %><%= o.post_link ? 'Post: '+o.post_link : '' %><%= (!o.profile_url && !o.post_link) ? '-' : '' %></td>
                 <td><span class="status-badge <%= o.status %>"><%= o.status %></span></td>
                 <td style="color:var(--text-muted)"><%= o.created_at %></td>
                 <td>
@@ -297,7 +298,7 @@
               </tr>
             <% }) %>
             <% if (orders.filter(function(o) { return o.status === 'pending' || o.is_confirmed === 0; }).length === 0) { %>
-              <tr><td colspan="12" style="text-align:center;color:var(--text-muted);padding:30px"><i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px"></i>No pending orders</td></tr>
+              <tr><td colspan="13" style="text-align:center;color:var(--text-muted);padding:30px"><i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px"></i>No pending orders</td></tr>
             <% } %>
           </tbody>
         </table>
@@ -343,6 +344,8 @@
                           </form>
                         <% } %>
                       <% } %>
+                      <% if (o.profile_url) { %><br><strong>Profile:</strong> <a href="<%= o.profile_url %>" target="_blank" style="color:var(--primary)"><%= o.profile_url %></a><% } %>
+                      <% if (o.post_link) { %><br><strong>Post:</strong> <a href="<%= o.post_link %>" target="_blank" style="color:var(--primary)"><%= o.post_link %></a><% } %>
                     </span>
                   <% } %>
                 </td>
