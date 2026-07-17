@@ -71,6 +71,8 @@
             <span class="badge badge-<%= o.status %>"><%= o.is_confirmed === 0 ? 'Awaiting' : o.status %></span>
           </div>
           <div class="dash-card-info"><%= formatTZS(o.price) %> | <%= o.payment_network || '-' %> | <%= o.phone || '-' %> | <%= o.created_at %></div>
+          <% if (o.profile_url) { %><div class="dash-card-info" style="font-size:12px">Profile: <a href="<%= o.profile_url %>" target="_blank"><%= o.profile_url %></a></div><% } %>
+          <% if (o.post_link) { %><div class="dash-card-info" style="font-size:12px">Post: <a href="<%= o.post_link %>" target="_blank"><%= o.post_link %></a></div><% } %>
           <% if (!o.is_confirmed) { %>
             <form method="POST" action="/order/confirm" class="dash-inline-form">
               <input type="hidden" name="order_id" value="<%= o.id %>" />
