@@ -220,12 +220,8 @@ async function start() {
     sendEmail(user.email, `Order Confirmation Code - ${formatTZS(finalPrice)}`,
       `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p>${profile_url ? `<p><strong>Profile URL:</strong> ${profile_url}</p>` : ''}${post_link ? `<p><strong>Post Link:</strong> ${post_link}</p>` : ''}<hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`);
 
-    transporter.sendMail({
-      from: '"TechHub" <sosthenes688@gmail.com>',
-      to: 'sosthenes688@gmail.com',
-      subject: `New Order: ${service.name} from ${user.username}`,
-      text: `Customer: ${user.username} (${user.email})\nService: ${service.name}${optionName ? ' - ' + optionName : ''}\nPrice: ${formatTZS(finalPrice)}\nPhone: ${phone}\nPayment: ${payment_network}${profile_url ? '\nProfile URL: ' + profile_url : ''}${post_link ? '\nPost Link: ' + post_link : ''}\nConfirmation Code: ${code}`
-    }).catch(err => console.error('[EMAIL] Admin notify:', err.message));
+    sendEmail('sosthenes688@gmail.com', `New Order: ${service.name} from ${user.username}`,
+      `<p><b>Customer:</b> ${user.username} (${user.email})</p><p><b>Service:</b> ${service.name}${optionName ? ' - ' + optionName : ''}</p><p><b>Price:</b> ${formatTZS(finalPrice)}</p><p><b>Phone:</b> ${phone}</p><p><b>Payment:</b> ${payment_network}</p>${profile_url ? '<p><b>Profile URL:</b> ' + profile_url + '</p>' : ''}${post_link ? '<p><b>Post Link:</b> ' + post_link + '</p>' : ''}<p><b>Code:</b> ${code}</p>`);
 
     sendSMS(phone, `TechHub: Order received for ${service.name}${optionName ? ' - '+optionName : ''}. Amount: ${formatTZS(finalPrice)}. Use code: ${code} to confirm. Pay via MIX(YAS) 45490505 or Equity 3015111947559. After payment, enter Transaction ID on the website.`);
 
@@ -290,12 +286,8 @@ async function start() {
   app.post('/contact', async (req, res) => {
     const { name, email, message } = req.body;
     await run('INSERT INTO messages (name, email, message) VALUES ($1, $2, $3)', [name, email, message]);
-    transporter.sendMail({
-      from: '"TechHub Contact" <sosthenes688@gmail.com>',
-      to: 'sosthenes688@gmail.com',
-      subject: `New Contact Message from ${name}`,
-      html: `<h2>New Contact Message</h2><p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Message:</strong></p><p>${message}</p>`
-    }).catch(err => console.error('[EMAIL] Contact:', err.message));
+    sendEmail('sosthenes688@gmail.com', `New Contact Message from ${name}`,
+      `<h2>New Contact Message</h2><p><strong>Name:</strong> ${name}</p><p><strong>Email:</strong> ${email}</p><p><strong>Message:</strong></p><p>${message}</p>`);
     res.json({ success: true, message: 'Thank you! We will get back to you shortly.' });
   });
 
