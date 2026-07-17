@@ -130,7 +130,7 @@ async function start() {
       return res.render('forgot-password', { error: 'Email not found', success: null, token: null, resetLink: null });
     }
     const token = crypto.randomBytes(20).toString('hex');
-    const expires = new Date(Date.now() + 3600000).toISOString();
+    const expires = new Date(Date.now() + 3600000);
     await run('INSERT INTO reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)', [user.id, token, expires]);
     const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
     const resetLink = `${siteUrl}/reset-password/${token}`;
@@ -199,7 +199,7 @@ async function start() {
   });
 
   app.post('/order', isAuth, async (req, res) => {
-    const { service_id, service_option_id, phone, payment_network } = req.body;
+    const { service_id, service_option_id, phone, payment_network, profile_url, post_link } = req.body;
     const service = await get('SELECT * FROM services WHERE id = $1 AND is_active = 1', [service_id]);
     if (!service) return res.redirect('/services');
 
@@ -213,18 +213,18 @@ async function start() {
     const user = req.session.user;
     const code = crypto.randomInt(100000, 999999).toString();
 
-    const result = await run('INSERT INTO orders (user_id, customer_name, customer_email, service, service_option, price, phone, payment_network, confirmation_code) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-      [user.id, user.username, user.email, service.name, optionName, finalPrice, phone, payment_network, code]);
+    const result = await run('INSERT INTO orders (user_id, customer_name, customer_email, service, service_option, price, phone, payment_network, confirmation_code, profile_url, post_link) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id',
+      [user.id, user.username, user.email, service.name, optionName, finalPrice, phone, payment_network, code, profile_url || '', post_link || '']);
     const order = result.rows[0];
 
     sendEmail(user.email, `Order Confirmation Code - ${formatTZS(finalPrice)}`,
-      `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p><hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`);
+      `<h2>Order Confirmation</h2><p>Hi <strong>${user.username}</strong>,</p><p>You placed an order for <strong>${service.name}${optionName ? ' - ' + optionName : ''}</strong>.</p><p><strong>Total:</strong> ${formatTZS(finalPrice)}</p><p><strong>Payment Network:</strong> ${payment_network} | <strong>Phone:</strong> ${phone}</p>${profile_url ? `<p><strong>Profile URL:</strong> ${profile_url}</p>` : ''}${post_link ? `<p><strong>Post Link:</strong> ${post_link}</p>` : ''}<hr><p style="font-size:18px">Your confirmation code is:</p><h1 style="background:#00d4ff;color:#1a1a2e;padding:15px;text-align:center;border-radius:8px;letter-spacing:5px;font-size:32px">${code}</h1><p>Enter this code on the website to confirm your order.</p><hr><p><strong>Make Payment To:</strong></p><p><strong>MIX by YAS:</strong> 45490505 (ERNEST AMOS MAKARANGA)</p><p><strong>Equity Bank:</strong> 3015111947559 (ERNEST MAKARANGA)</p><hr><p>After payment, confirm with the code above. Admin will approve once payment is verified.</p><p>Thank you!<br><strong>TechHub Company</strong><br>Developed by Ernest Sosthenes</p>`);
 
     transporter.sendMail({
       from: '"TechHub" <sosthenes688@gmail.com>',
       to: 'sosthenes688@gmail.com',
       subject: `New Order: ${service.name} from ${user.username}`,
-      text: `Customer: ${user.username} (${user.email})\nService: ${service.name}${optionName ? ' - ' + optionName : ''}\nPrice: ${formatTZS(finalPrice)}\nPhone: ${phone}\nPayment: ${payment_network}\nConfirmation Code: ${code}`
+      text: `Customer: ${user.username} (${user.email})\nService: ${service.name}${optionName ? ' - ' + optionName : ''}\nPrice: ${formatTZS(finalPrice)}\nPhone: ${phone}\nPayment: ${payment_network}${profile_url ? '\nProfile URL: ' + profile_url : ''}${post_link ? '\nPost Link: ' + post_link : ''}\nConfirmation Code: ${code}`
     }).catch(err => console.error('[EMAIL] Admin notify:', err.message));
 
     sendSMS(phone, `TechHub: Order received for ${service.name}${optionName ? ' - '+optionName : ''}. Amount: ${formatTZS(finalPrice)}. Use code: ${code} to confirm. Pay via MIX(YAS) 45490505 or Equity 3015111947559. After payment, enter Transaction ID on the website.`);
@@ -418,6 +418,11 @@ async function start() {
     const s = await get('SELECT needs_quote FROM services WHERE id = $1', [id]);
     if (s) await run('UPDATE services SET needs_quote = $1 WHERE id = $2', [s.needs_quote ? 0 : 1, id]);
     res.redirect('/admin');
+  });
+
+  app.use((err, req, res, next) => {
+    console.error('[ERROR]', err);
+    res.status(500).send(`<h1>Server Error</h1><pre>${err.message}</pre><p>Check server logs for details.</p>`);
   });
 
   const nets = os.networkInterfaces();
